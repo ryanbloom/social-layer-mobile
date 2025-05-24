@@ -20,6 +20,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { formatEventDuration, getEventStatus } from '../utils/dateUtils';
 import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../utils/colors';
 
 type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
 
@@ -156,7 +157,7 @@ export default function EventDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Loading event details...</Text>
       </View>
     );
@@ -165,7 +166,7 @@ export default function EventDetailScreen() {
   if (error || !event) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
+        <Ionicons name="alert-circle-outline" size={64} color={colors.status.error} />
         <Text style={styles.errorTitle}>Event Not Found</Text>
         <Text style={styles.errorDescription}>
           The event you're looking for doesn't exist or has been removed.
@@ -179,28 +180,24 @@ export default function EventDetailScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Header Image */}
-      <View style={styles.imageContainer}>
-        {event.cover_url ? (
+      {/* Header Image - only show when image exists */}
+      {event.cover_url && (
+        <View style={styles.imageContainer}>
           <Image source={{ uri: event.cover_url }} style={styles.coverImage} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Ionicons name="image-outline" size={48} color="#ccc" />
+          
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleStarToggle}>
+              <Ionicons name="star-outline" size={24} color={colors.text.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+              <Ionicons name="share-outline" size={24} color={colors.text.white} />
+            </TouchableOpacity>
           </View>
-        )}
-        
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleStarToggle}>
-            <Ionicons name="star-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Ionicons name="share-outline" size={24} color="#fff" />
-          </TouchableOpacity>
         </View>
-      </View>
+      )}
 
-      <View style={styles.content}>
+      <View style={event.cover_url ? styles.content : styles.contentNoImage}>
         {/* Badges */}
         <View style={styles.badgeContainer}>
           {eventStatus === 'past' && <Badge text="Past" variant="past" />}
@@ -231,7 +228,7 @@ export default function EventDetailScreen() {
         {/* Date & Time */}
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
-            <Ionicons name="calendar" size={24} color="#007AFF" />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
             <View style={styles.infoText}>
               <Text style={styles.infoTitle}>Date & Time</Text>
               <Text style={styles.infoValue}>{duration}</Text>
@@ -246,7 +243,7 @@ export default function EventDetailScreen() {
               <Ionicons 
                 name={event.meeting_url ? "videocam" : "location"} 
                 size={24} 
-                color="#007AFF" 
+                color={colors.primary} 
               />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>
@@ -263,7 +260,7 @@ export default function EventDetailScreen() {
         {/* Participants */}
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
-            <Ionicons name="people" size={24} color="#007AFF" />
+            <Ionicons name="people" size={24} color={colors.primary} />
             <View style={styles.infoText}>
               <Text style={styles.infoTitle}>Participants</Text>
               <Text style={styles.infoValue}>
@@ -323,7 +320,7 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background.primary,
   },
   contentContainer: {
     flexGrow: 1,
@@ -336,7 +333,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: colors.text.secondary,
   },
   errorContainer: {
     flex: 1,
@@ -347,13 +344,13 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
   },
   errorDescription: {
     fontSize: 16,
-    color: '#666',
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -364,13 +361,6 @@ const styles = StyleSheet.create({
   coverImage: {
     width: '100%',
     height: '100%',
-  },
-  placeholderImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   actionButtons: {
     position: 'absolute',
@@ -388,10 +378,16 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   content: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.secondary,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginTop: -20,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  contentNoImage: {
+    backgroundColor: colors.background.secondary,
     paddingTop: 24,
     paddingHorizontal: 20,
     paddingBottom: 40,
@@ -404,7 +400,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 20,
     lineHeight: 36,
   },
@@ -414,7 +410,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.background.tertiary,
   },
   hostAvatar: {
     width: 50,
@@ -428,12 +424,12 @@ const styles = StyleSheet.create({
   hostName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 2,
   },
   hostLabel: {
     fontSize: 14,
-    color: '#666',
+    color: colors.text.secondary,
   },
   infoSection: {
     marginBottom: 20,
@@ -449,12 +445,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: colors.text.secondary,
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
+    color: colors.text.primary,
     lineHeight: 22,
   },
   descriptionSection: {
@@ -463,12 +459,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 12,
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: colors.text.secondary,
     lineHeight: 24,
   },
   tagsSection: {
@@ -479,7 +475,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   tag: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background.tertiary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -488,7 +484,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 14,
-    color: '#666',
+    color: colors.text.secondary,
   },
   rsvpContainer: {
     alignItems: 'center',
@@ -498,11 +494,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cancelButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: colors.status.error,
   },
   rsvpNote: {
     fontSize: 14,
-    color: '#999',
+    color: colors.text.tertiary,
     textAlign: 'center',
   },
 });

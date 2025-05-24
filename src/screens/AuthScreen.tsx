@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Button from "../components/Button";
 import PinVerification from "../components/PinVerification";
 import { useAuth } from "../contexts/AuthContext";
+import { colors } from "../utils/colors";
 
 export default function AuthScreen() {
   const [email, setEmail] = useState("");
@@ -161,7 +162,7 @@ export default function AuthScreen() {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Ionicons name="people-circle-outline" size={80} color="#007AFF" />
+          <Ionicons name="people-circle-outline" size={80} color={colors.primary} />
           <Text style={styles.title}>Welcome to Social Layer</Text>
           <Text style={styles.subtitle}>
             Connect with your community and discover amazing events
@@ -175,7 +176,7 @@ export default function AuthScreen() {
             loading={actionLoading}
             size="large"
             style={[styles.signInButton, styles.googleButton]}
-            icon={<Ionicons name="logo-google" size={20} color="#fff" />}
+            icon={<Ionicons name="logo-google" size={20} color={colors.text.white} />}
           />
 
           <View style={styles.divider}>
@@ -222,7 +223,7 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.background.primary,
   },
   content: {
     flex: 1,
@@ -236,14 +237,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.text.primary,
     marginTop: 24,
     marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: 22,
   },
@@ -257,13 +258,13 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text.primary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: colors.border.primary,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   googleButton: {
-    backgroundColor: "#4285F4",
+    backgroundColor: colors.google,
   },
   divider: {
     flexDirection: "row",
@@ -284,11 +285,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colors.border.primary,
   },
   dividerText: {
     marginHorizontal: 16,
-    color: "#666",
+    color: colors.text.secondary,
     fontSize: 14,
   },
   emailButton: {
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   },
   helpText: {
     fontSize: 14,
-    color: "#666",
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: 20,
   },
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: "#999",
+    color: colors.text.tertiary,
     textAlign: "center",
     lineHeight: 18,
   },

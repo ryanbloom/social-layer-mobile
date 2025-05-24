@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
+import { colors } from '../utils/colors';
 
 interface ButtonProps {
   title: string;
@@ -48,7 +49,7 @@ export default function Button({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? '#fff' : '#007AFF'} />
+        <ActivityIndicator color={variant === 'primary' ? colors.text.white : colors.primary} />
       ) : (
         <View style={styles.content}>
           {icon && <View style={styles.icon}>{icon}</View>}
@@ -80,33 +81,33 @@ const styles = StyleSheet.create({
   
   // Variants
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
   },
   primaryText: {
-    color: '#fff',
+    color: colors.text.white,
   },
   
   secondaryButton: {
-    backgroundColor: '#f1f1f1',
+    backgroundColor: colors.background.tertiary,
   },
   secondaryText: {
-    color: '#333',
+    color: colors.text.primary,
   },
   
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: colors.primary,
   },
   outlineText: {
-    color: '#007AFF',
+    color: colors.primary,
   },
   
   ghostButton: {
     backgroundColor: 'transparent',
   },
   ghostText: {
-    color: '#007AFF',
+    color: colors.primary,
   },
   
   // Sizes
@@ -139,9 +140,9 @@ const styles = StyleSheet.create({
   
   // Disabled state
   disabledButton: {
-    opacity: 0.6,
+    opacity: colors.disabled,
   },
   disabledText: {
-    opacity: 0.6,
+    opacity: colors.disabled,
   },
 });

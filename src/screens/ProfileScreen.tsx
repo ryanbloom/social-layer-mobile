@@ -1,46 +1,52 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-import Button from '../components/Button';
-import { useAuth } from '../contexts/AuthContext';
+import Button from "../components/Button";
+import { useAuth } from "../contexts/AuthContext";
+import { colors } from '../utils/colors';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
 
   const handleSignIn = () => {
-    navigation.navigate('Auth' as never);
+    navigation.navigate("Auth" as never);
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (error) {
+            Alert.alert("Error", "Failed to sign out. Please try again.");
           }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderAuthPrompt = () => (
     <View style={styles.authPrompt}>
-      <Ionicons name="person-circle-outline" size={80} color="#ccc" />
+      <Ionicons name="person-circle-outline" size={80} color={colors.text.tertiary} />
       <Text style={styles.authTitle}>Sign In Required</Text>
       <Text style={styles.authDescription}>
-        Sign in to view your profile, manage events, and connect with the community.
+        Sign in to view your profile, manage events, and connect with the
+        community.
       </Text>
       <Button
         title="Sign In"
@@ -55,20 +61,20 @@ export default function ProfileScreen() {
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <Image
-            source={{ uri: user?.image_url || 'https://via.placeholder.com/120' }}
+            source={{
+              uri: user?.image_url || "https://via.placeholder.com/120",
+            }}
             style={styles.avatar}
           />
           <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="camera" size={20} color="#007AFF" />
+            <Ionicons name="camera" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
-        
-        <Text style={styles.name}>{user?.nickname || 'Unknown User'}</Text>
-        <Text style={styles.handle}>@{user?.handle || 'unknown'}</Text>
-        <Text style={styles.bio}>
-          {user?.about || 'No bio available'}
-        </Text>
-        
+
+        <Text style={styles.name}>{user?.nickname || "Unknown User"}</Text>
+        <Text style={styles.handle}>@{user?.handle || "unknown"}</Text>
+        <Text style={styles.bio}>{user?.about || "No bio available"}</Text>
+
         <Button
           title="Edit Profile"
           variant="outline"
@@ -77,50 +83,36 @@ export default function ProfileScreen() {
         />
       </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>12</Text>
-          <Text style={styles.statLabel}>Events Hosted</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>45</Text>
-          <Text style={styles.statLabel}>Events Attended</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>8</Text>
-          <Text style={styles.statLabel}>Groups Joined</Text>
-        </View>
-      </View>
-
       <View style={styles.menuContainer}>
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="notifications-outline" size={24} color="#666" />
+          <Ionicons name="notifications-outline" size={24} color={colors.text.secondary} />
           <Text style={styles.menuText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color="#666" />
+          <Ionicons name="settings-outline" size={24} color={colors.text.secondary} />
           <Text style={styles.menuText}>Settings</Text>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="help-circle-outline" size={24} color="#666" />
+          <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
           <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="information-circle-outline" size={24} color="#666" />
+          <Ionicons name="information-circle-outline" size={24} color={colors.text.secondary} />
           <Text style={styles.menuText}>About</Text>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
         </TouchableOpacity>
-        
-        <TouchableOpacity style={[styles.menuItem, styles.signOutItem]} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
+
+        <TouchableOpacity
+          style={[styles.menuItem, styles.signOutItem]}
+          onPress={handleSignOut}
+        >
+          <Ionicons name="log-out-outline" size={24} color={colors.status.error} />
           <Text style={[styles.menuText, styles.signOutText]}>Sign Out</Text>
         </TouchableOpacity>
       </View>
@@ -137,25 +129,25 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background.primary,
   },
   authPrompt: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 32,
   },
   authTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
   },
   authDescription: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: colors.text.secondary,
+    textAlign: "center",
     lineHeight: 22,
     marginBottom: 32,
   },
@@ -166,115 +158,84 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   profileHeader: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.secondary,
     padding: 24,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.border.primary,
   },
   avatarContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 16,
   },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background.tertiary,
   },
   editAvatarButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.secondary,
     borderRadius: 16,
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: '#f0f0f0',
+    borderColor: colors.background.tertiary,
   },
   name: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: colors.text.primary,
     marginBottom: 4,
   },
   handle: {
     fontSize: 16,
-    color: '#007AFF',
+    color: colors.primary,
     marginBottom: 8,
   },
   bio: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: colors.text.secondary,
+    textAlign: "center",
     lineHeight: 22,
     marginBottom: 20,
   },
   editButton: {
     minWidth: 120,
   },
-  statsContainer: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    paddingVertical: 20,
-    marginTop: 16,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
+
   menuContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 16,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   menuText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     marginLeft: 12,
   },
   signOutItem: {
     borderBottomWidth: 0,
   },
   signOutText: {
-    color: '#FF3B30',
+    color: "#FF3B30",
   },
 });

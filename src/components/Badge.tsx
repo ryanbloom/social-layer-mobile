@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { colors } from '../utils/colors';
 
 interface BadgeProps {
   text: string;
@@ -33,73 +34,73 @@ const styles = StyleSheet.create({
   
   // Default
   defaultBadge: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background.tertiary,
   },
   defaultText: {
-    color: '#333',
+    color: colors.text.primary,
   },
   
   // Past
   pastBadge: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background.primary,
   },
   pastText: {
-    color: '#666',
+    color: colors.text.secondary,
   },
   
   // Private
   privateBadge: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: colors.status.warningBg,
   },
   privateText: {
-    color: '#856404',
+    color: colors.status.warning,
   },
   
   // Pending
   pendingBadge: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: colors.status.warningBg,
   },
   pendingText: {
-    color: '#856404',
+    color: colors.status.warning,
   },
   
   // Cancel
   cancelBadge: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: colors.status.errorBg,
   },
   cancelText: {
-    color: '#721c24',
+    color: colors.status.error,
   },
   
   // Ongoing
   ongoingBadge: {
-    backgroundColor: '#d1ecf1',
+    backgroundColor: colors.status.infoBg,
   },
   ongoingText: {
-    color: '#0c5460',
+    color: colors.status.info,
   },
   
   // Upcoming
   upcomingBadge: {
-    backgroundColor: '#d4edda',
+    backgroundColor: colors.status.successBg,
   },
   upcomingText: {
-    color: '#155724',
+    color: colors.status.success,
   },
   
   // Hosting
   hostingBadge: {
-    backgroundColor: '#e2e3ff',
+    backgroundColor: colors.primaryLight,
   },
   hostingText: {
-    color: '#383d9a',
+    color: colors.primaryDark,
   },
   
   // Joining
   joiningBadge: {
-    backgroundColor: '#cce5ff',
+    backgroundColor: colors.primaryLight,
   },
   joiningText: {
-    color: '#004085',
+    color: colors.primaryDark,
   },
 });

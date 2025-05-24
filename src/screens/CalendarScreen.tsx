@@ -20,6 +20,7 @@ import {
 } from "../services/api";
 import EventCard from "../components/EventCard";
 import { formatEventTime } from "../utils/dateUtils";
+import { colors } from "../utils/colors";
 
 type CalendarScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -40,7 +41,7 @@ export default function CalendarScreen() {
       year: "numeric",
     });
     navigation.setOptions({
-      title: dateString,
+      headerTitle: dateString,
     });
   }, [selectedDate, navigation]);
 
@@ -98,7 +99,7 @@ export default function CalendarScreen() {
             setCurrentMonth(newMonth);
           }}
         >
-          <Ionicons name="chevron-back" size={24} color="#007AFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.primary} />
         </TouchableOpacity>
 
         <Text style={styles.monthYear}>{monthYear}</Text>
@@ -111,7 +112,7 @@ export default function CalendarScreen() {
             setCurrentMonth(newMonth);
           }}
         >
-          <Ionicons name="chevron-forward" size={24} color="#007AFF" />
+          <Ionicons name="chevron-forward" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
     );
@@ -169,7 +170,7 @@ export default function CalendarScreen() {
                 styles.dayText,
                 !isCurrentMonth && styles.inactiveDayText,
                 isSelected && styles.selectedDayText,
-                isToday && !isSelected && styles.todayDayText,
+                isToday && styles.todayDayText,
               ]}
             >
               {currentDate.getDate()}
@@ -213,7 +214,7 @@ export default function CalendarScreen() {
       <>
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Loading events...</Text>
           </View>
         ) : selectedDateEvents.length > 0 ? (
@@ -229,7 +230,11 @@ export default function CalendarScreen() {
           </View>
         ) : (
           <View style={styles.noEventsContainer}>
-            <Ionicons name="calendar-outline" size={48} color="#ccc" />
+            <Ionicons
+              name="calendar-outline"
+              size={48}
+              color={colors.text.tertiary}
+            />
             <Text style={styles.noEventsText}>No events scheduled</Text>
             <Text style={styles.noEventsSubtext}>
               Create an event or check other dates
@@ -258,13 +263,13 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.background.primary,
   },
   contentContainer: {
     flexGrow: 1,
   },
   calendarContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background.secondary,
     margin: 16,
     borderRadius: 12,
     padding: 16,
@@ -286,7 +291,7 @@ const styles = StyleSheet.create({
   monthYear: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.text.primary,
   },
   weekDaysContainer: {
     flexDirection: "row",
@@ -300,7 +305,7 @@ const styles = StyleSheet.create({
   weekDayText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#666",
+    color: colors.text.secondary,
   },
   calendarDays: {
     marginBottom: 8,
@@ -317,26 +322,26 @@ const styles = StyleSheet.create({
     margin: 1,
   },
   selectedDay: {
-    backgroundColor: "#007AFF",
+    backgroundColor: colors.primary,
   },
   todayDay: {
-    backgroundColor: "#f0f8ff",
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: colors.primary,
   },
   dayText: {
     fontSize: 16,
-    color: "#333",
+    color: colors.text.primary,
   },
   inactiveDayText: {
-    color: "#ccc",
+    color: colors.text.tertiary,
   },
   selectedDayText: {
-    color: "#fff",
+    color: colors.text.white,
     fontWeight: "bold",
   },
   todayDayText: {
-    color: "#007AFF",
+    color: colors.primary,
     fontWeight: "bold",
   },
   noEventsContainer: {
@@ -347,13 +352,13 @@ const styles = StyleSheet.create({
   noEventsText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: colors.text.secondary,
     marginTop: 16,
     marginBottom: 4,
   },
   noEventsSubtext: {
     fontSize: 14,
-    color: "#999",
+    color: colors.text.tertiary,
     textAlign: "center",
   },
   eventIndicator: {
@@ -363,7 +368,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#007AFF",
+    backgroundColor: colors.primary,
   },
   loadingContainer: {
     alignItems: "center",
@@ -373,7 +378,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: colors.text.secondary,
   },
   eventsList: {
     marginHorizontal: 8,

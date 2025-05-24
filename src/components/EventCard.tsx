@@ -6,6 +6,7 @@ import Card from "./Card";
 import Badge from "./Badge";
 import { formatEventTime, getEventStatus } from "../utils/dateUtils";
 import { LOCAL_TIMEZONE } from "../services/api";
+import { colors } from "../utils/colors";
 
 interface EventCardProps {
   event: EventWithJoinStatus;
@@ -42,12 +43,12 @@ export default function EventCard({
           <Ionicons
             name={event.is_starred ? "star" : "star-outline"}
             size={20}
-            color={event.is_starred ? "#FFD700" : "#ccc"}
+            color={event.is_starred ? "#FFD700" : colors.text.tertiary}
           />
         </TouchableOpacity>
       )}
 
-      <View style={styles.content}>
+      <View style={event.cover_url ? styles.content : styles.contentFullWidth}>
         {/* Badges */}
         <View style={styles.badgeContainer}>
           {eventStatus === "past" && <Badge text="Past" variant="past" />}
@@ -114,7 +115,11 @@ export default function EventCard({
 
         {/* Date and Time */}
         <View style={styles.dateTimeContainer}>
-          <Ionicons name="calendar-outline" size={16} color="#666" />
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={colors.text.secondary}
+          />
           <Text style={styles.dateTime}>
             {date} • {time}
           </Text>
@@ -123,7 +128,11 @@ export default function EventCard({
         {/* Location */}
         {event.location && (
           <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={16} color="#666" />
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={colors.text.secondary}
+            />
             <Text style={styles.location} numberOfLines={1}>
               {event.location}
             </Text>
@@ -133,7 +142,11 @@ export default function EventCard({
         {/* Meeting URL */}
         {event.meeting_url && (
           <View style={styles.locationContainer}>
-            <Ionicons name="link-outline" size={16} color="#666" />
+            <Ionicons
+              name="link-outline"
+              size={16}
+              color={colors.text.secondary}
+            />
             <Text style={styles.location} numberOfLines={1}>
               Online Event
             </Text>
@@ -141,25 +154,12 @@ export default function EventCard({
         )}
       </View>
 
-      {/* Cover Image */}
-      <View style={styles.imageContainer}>
-        {event.cover_url ? (
+      {/* Cover Image - only show when image exists */}
+      {event.cover_url && (
+        <View style={styles.imageContainer}>
           <Image source={{ uri: event.cover_url }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderTitle} numberOfLines={2}>
-              {event.title}
-            </Text>
-            <Text style={styles.placeholderDate}>{date}</Text>
-            <Text style={styles.placeholderTime}>{time}</Text>
-            {event.location && (
-              <Text style={styles.placeholderLocation} numberOfLines={1}>
-                {event.location}
-              </Text>
-            )}
-          </View>
-        )}
-      </View>
+        </View>
+      )}
     </Card>
   );
 }
@@ -186,6 +186,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     marginVertical: 8,
+    backgroundColor: "white",
   },
   starButton: {
     position: "absolute",
@@ -198,6 +199,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  contentFullWidth: {
+    flex: 1,
+  },
   badgeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text.primary,
     marginBottom: 8,
     lineHeight: 22,
   },
@@ -229,7 +233,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: "#666",
+    color: colors.text.secondary,
   },
   track: {
     fontSize: 14,
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
   },
   host: {
     fontSize: 14,
-    color: "#666",
+    color: colors.text.secondary,
     marginBottom: 8,
   },
   dateTimeContainer: {
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
   },
   dateTime: {
     fontSize: 14,
-    color: "#666",
+    color: colors.text.secondary,
     marginLeft: 4,
   },
   locationContainer: {
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 14,
-    color: "#666",
+    color: colors.text.secondary,
     marginLeft: 4,
     flex: 1,
   },
@@ -270,33 +274,5 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 8,
-  },
-  placeholderImage: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    padding: 8,
-    justifyContent: "center",
-  },
-  placeholderTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  placeholderDate: {
-    fontSize: 10,
-    color: "#666",
-    marginBottom: 2,
-  },
-  placeholderTime: {
-    fontSize: 10,
-    color: "#666",
-    marginBottom: 2,
-  },
-  placeholderLocation: {
-    fontSize: 10,
-    color: "#666",
   },
 });

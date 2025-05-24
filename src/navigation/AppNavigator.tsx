@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../utils/colors';
 
 import { RootStackParamList, TabParamList } from '../types';
 import DiscoverScreen from '../screens/DiscoverScreen';
@@ -41,12 +42,12 @@ function TabNavigator() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text.secondary,
         headerStyle: {
-          backgroundColor: '#007AFF',
+          backgroundColor: colors.primary,
         },
-        headerTintColor: '#fff',
+        headerTintColor: colors.text.white,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -85,7 +86,7 @@ export default function AppNavigator() {
     console.log('DEBUG AppNavigator: Showing loading spinner');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -110,9 +111,9 @@ export default function AppNavigator() {
         initialRouteName="Main"
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: colors.primary,
           },
-          headerTintColor: '#fff',
+          headerTintColor: colors.text.white,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
