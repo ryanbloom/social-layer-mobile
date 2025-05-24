@@ -1,0 +1,406 @@
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Image, 
+  TouchableOpacity, 
+  ActivityIndicator,
+  Alert 
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
+
+import { RootStackParamList } from '../types';
+import { apolloClient, GET_EVENT_DETAIL } from '../services/api';
+import Button from '../components/Button';
+import Badge from '../components/Badge';
+import { formatEventDuration, getEventStatus } from '../utils/dateUtils';
+
+type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
+
+export default function EventDetailScreen() {
+  const route = useRoute<EventDetailRouteProp>();
+  const { eventId } = route.params;
+  const [isRSVPing, setIsRSVPing] = useState(false);
+
+  const { data: event, isLoading, error } = useQuery({
+    queryKey: ['event', eventId],
+    queryFn: async () => {
+      const result = await apolloClient.query({
+        query: GET_EVENT_DETAIL,
+        variables: { id: eventId },
+      });
+      return result.data.events_by_pk;
+    },
+  });
+
+  const handleRSVP = async () => {
+    setIsRSVPing(true);
+    
+    try {
+      // TODO: Implement RSVP functionality
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      Alert.alert('Success', 'Successfully RSVP\'d to event!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to RSVP. Please try again.');
+    } finally {
+      setIsRSVPing(false);
+    }
+  };
+
+  const handleShare = () => {
+    Alert.alert('Share Event', 'Share functionality will be implemented here.');
+  };
+
+  const handleStarToggle = () => {
+    // TODO: Implement star/unstar functionality
+    Alert.alert('Star Event', 'Star functionality will be implemented here.');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading event details...</Text>
+      </View>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle-outline" size={64} color="#FF3B30" />
+        <Text style={styles.errorTitle}>Event Not Found</Text>
+        <Text style={styles.errorDescription}>
+          The event you're looking for doesn't exist or has been removed.
+        </Text>
+      </View>
+    );
+  }
+
+  const eventStatus = getEventStatus(event.start_time, event.end_time);
+  const duration = formatEventDuration(event.start_time, event.end_time, event.timezone);
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Header Image */}
+      <View style={styles.imageContainer}>
+        {event.cover_url ? (
+          <Image source={{ uri: event.cover_url }} style={styles.coverImage} />
+        ) : (
+          <View style={styles.placeholderImage}>
+            <Ionicons name="image-outline" size={48} color="#ccc" />
+          </View>
+        )}
+        
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleStarToggle}>
+            <Ionicons name="star-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+            <Ionicons name="share-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        {/* Badges */}
+        <View style={styles.badgeContainer}>
+          {eventStatus === 'past' && <Badge text="Past" variant="past" />}
+          {event.display === 'private' && <Badge text="Private" variant="private" />}
+          {event.status === 'pending' && <Badge text="Pending" variant="pending" />}
+          {event.status === 'cancel' && <Badge text="Canceled" variant="cancel" />}
+          {eventStatus === 'ongoing' && <Badge text="Ongoing" variant="ongoing" />}
+          {eventStatus === 'upcoming' && <Badge text="Upcoming" variant="upcoming" />}
+        </View>
+
+        {/* Title */}
+        <Text style={styles.title}>{event.title}</Text>
+
+        {/* Host Info */}
+        <View style={styles.hostContainer}>
+          <Image 
+            source={{ uri: event.owner.image_url || 'https://via.placeholder.com/40' }} 
+            style={styles.hostAvatar} 
+          />
+          <View style={styles.hostInfo}>
+            <Text style={styles.hostName}>
+              {event.owner.nickname || event.owner.handle}
+            </Text>
+            <Text style={styles.hostLabel}>Event Host</Text>
+          </View>
+        </View>
+
+        {/* Date & Time */}
+        <View style={styles.infoSection}>
+          <View style={styles.infoItem}>
+            <Ionicons name="calendar" size={24} color="#007AFF" />
+            <View style={styles.infoText}>
+              <Text style={styles.infoTitle}>Date & Time</Text>
+              <Text style={styles.infoValue}>{duration}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Location */}
+        {(event.location || event.meeting_url) && (
+          <View style={styles.infoSection}>
+            <View style={styles.infoItem}>
+              <Ionicons 
+                name={event.meeting_url ? "videocam" : "location"} 
+                size={24} 
+                color="#007AFF" 
+              />
+              <View style={styles.infoText}>
+                <Text style={styles.infoTitle}>
+                  {event.meeting_url ? "Online Event" : "Location"}
+                </Text>
+                <Text style={styles.infoValue}>
+                  {event.location || "Online"}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Participants */}
+        <View style={styles.infoSection}>
+          <View style={styles.infoItem}>
+            <Ionicons name="people" size={24} color="#007AFF" />
+            <View style={styles.infoText}>
+              <Text style={styles.infoTitle}>Participants</Text>
+              <Text style={styles.infoValue}>
+                {event.participants_count} attending
+                {event.max_participant && ` • ${event.max_participant} max`}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Description */}
+        {event.content && (
+          <View style={styles.descriptionSection}>
+            <Text style={styles.sectionTitle}>About This Event</Text>
+            <Text style={styles.description}>{event.content}</Text>
+          </View>
+        )}
+
+        {/* Tags */}
+        {event.tags && event.tags.length > 0 && (
+          <View style={styles.tagsSection}>
+            <Text style={styles.sectionTitle}>Tags</Text>
+            <View style={styles.tagsContainer}>
+              {event.tags.map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* RSVP Button */}
+        <View style={styles.rsvpContainer}>
+          <Button
+            title="RSVP to Event"
+            onPress={handleRSVP}
+            loading={isRSVPing}
+            size="large"
+            style={styles.rsvpButton}
+          />
+          <Text style={styles.rsvpNote}>
+            You can change your RSVP status at any time
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  contentContainer: {
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  imageContainer: {
+    position: 'relative',
+    height: 250,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  content: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -20,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    lineHeight: 36,
+  },
+  hostContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  hostAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  hostInfo: {
+    flex: 1,
+  },
+  hostName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  hostLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  infoSection: {
+    marginBottom: 20,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  infoText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 22,
+  },
+  descriptionSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  description: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+  },
+  tagsSection: {
+    marginBottom: 32,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tag: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  rsvpContainer: {
+    alignItems: 'center',
+  },
+  rsvpButton: {
+    width: '100%',
+    marginBottom: 12,
+  },
+  rsvpNote: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+});

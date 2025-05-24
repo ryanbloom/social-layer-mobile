@@ -1,4 +1,35 @@
 {
-  "name": "social-layer-mobile",
-  "slug": "social-layer-mobile"
+  "expo": {
+    "name": "Social Layer",
+    "slug": "social-layer-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.ryanbloom.social-layer-mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "xyz.ryanbloom.social-layer-mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": ["expo-image-picker", "expo-location"],
+    "extra": {
+      "apiUrl": "https://api.sola.day",
+      "graphUrl": "https://hasura-graph.fly.dev/v1/graphql"
+    }
+  }
 }
