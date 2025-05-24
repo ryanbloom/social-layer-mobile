@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { EventWithJoinStatus } from '../types';
-import Card from './Card';
-import Badge from './Badge';
-import { formatEventTime, getEventStatus } from '../utils/dateUtils';
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { EventWithJoinStatus } from "../types";
+import Card from "./Card";
+import Badge from "./Badge";
+import { formatEventTime, getEventStatus } from "../utils/dateUtils";
+import { LOCAL_TIMEZONE } from "../services/api";
 
 interface EventCardProps {
   event: EventWithJoinStatus;
@@ -12,24 +13,36 @@ interface EventCardProps {
   onStarPress?: () => void;
 }
 
-export default function EventCard({ event, onPress, onStarPress }: EventCardProps) {
+export default function EventCard({
+  event,
+  onPress,
+  onStarPress,
+}: EventCardProps) {
   const eventStatus = getEventStatus(event.start_time, event.end_time);
-  const { date, time } = formatEventTime(event.start_time, event.timezone);
-  
-  const customHost = event.event_roles?.find(r => r.role === 'custom_host');
-  const groupHost = event.event_roles?.find(r => r.role === 'group_host');
-  const cohosts = event.event_roles?.filter(r => r.role === 'co_host');
-  const host = customHost?.nickname || groupHost?.nickname || event.owner.nickname || event.owner.handle;
+  const { date, time } = formatEventTime(
+    event.start_time,
+    event.timezone,
+    LOCAL_TIMEZONE,
+  );
+
+  const customHost = event.event_roles?.find((r) => r.role === "custom_host");
+  const groupHost = event.event_roles?.find((r) => r.role === "group_host");
+  const cohosts = event.event_roles?.filter((r) => r.role === "co_host");
+  const host =
+    customHost?.nickname ||
+    groupHost?.nickname ||
+    event.owner.nickname ||
+    event.owner.handle;
 
   return (
     <Card onPress={onPress} style={styles.container}>
       {/* Star button */}
       {onStarPress && (
         <TouchableOpacity style={styles.starButton} onPress={onStarPress}>
-          <Ionicons 
-            name={event.is_starred ? 'star' : 'star-outline'} 
-            size={20} 
-            color={event.is_starred ? '#FFD700' : '#ccc'} 
+          <Ionicons
+            name={event.is_starred ? "star" : "star-outline"}
+            size={20}
+            color={event.is_starred ? "#FFD700" : "#ccc"}
           />
         </TouchableOpacity>
       )}
@@ -37,12 +50,22 @@ export default function EventCard({ event, onPress, onStarPress }: EventCardProp
       <View style={styles.content}>
         {/* Badges */}
         <View style={styles.badgeContainer}>
-          {eventStatus === 'past' && <Badge text="Past" variant="past" />}
-          {event.display === 'private' && <Badge text="Private" variant="private" />}
-          {event.status === 'pending' && <Badge text="Pending" variant="pending" />}
-          {event.status === 'cancel' && <Badge text="Canceled" variant="cancel" />}
-          {eventStatus === 'ongoing' && <Badge text="Ongoing" variant="ongoing" />}
-          {eventStatus === 'upcoming' && <Badge text="Upcoming" variant="upcoming" />}
+          {eventStatus === "past" && <Badge text="Past" variant="past" />}
+          {event.display === "private" && (
+            <Badge text="Private" variant="private" />
+          )}
+          {event.status === "pending" && (
+            <Badge text="Pending" variant="pending" />
+          )}
+          {event.status === "cancel" && (
+            <Badge text="Canceled" variant="cancel" />
+          )}
+          {eventStatus === "ongoing" && (
+            <Badge text="Ongoing" variant="ongoing" />
+          )}
+          {eventStatus === "upcoming" && (
+            <Badge text="Upcoming" variant="upcoming" />
+          )}
           {event.is_owner && <Badge text="Hosting" variant="hosting" />}
           {event.is_attending && <Badge text="Attended" variant="joining" />}
         </View>
@@ -56,11 +79,16 @@ export default function EventCard({ event, onPress, onStarPress }: EventCardProp
         {event.tags && event.tags.length > 0 && (
           <View style={styles.tagsContainer}>
             {event.tags
-              .filter(tag => !tag.startsWith(':'))
+              .filter((tag) => !tag.startsWith(":"))
               .slice(0, 3)
               .map((tag, index) => (
                 <View key={index} style={styles.tag}>
-                  <View style={[styles.tagDot, { backgroundColor: getTagColor(tag) }]} />
+                  <View
+                    style={[
+                      styles.tagDot,
+                      { backgroundColor: getTagColor(tag) },
+                    ]}
+                  />
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}
@@ -69,7 +97,9 @@ export default function EventCard({ event, onPress, onStarPress }: EventCardProp
 
         {/* Track */}
         {event.track && (
-          <Text style={[styles.track, { color: getTagColor(event.track.title) }]}>
+          <Text
+            style={[styles.track, { color: getTagColor(event.track.title) }]}
+          >
             {event.track.title}
           </Text>
         )}
@@ -77,13 +107,17 @@ export default function EventCard({ event, onPress, onStarPress }: EventCardProp
         {/* Host */}
         <Text style={styles.host}>
           hosted by {host}
-          {cohosts && cohosts.length > 0 && `, ${cohosts.map(c => c.nickname).join(', ')}`}
+          {cohosts &&
+            cohosts.length > 0 &&
+            `, ${cohosts.map((c) => c.nickname).join(", ")}`}
         </Text>
 
         {/* Date and Time */}
         <View style={styles.dateTimeContainer}>
           <Ionicons name="calendar-outline" size={16} color="#666" />
-          <Text style={styles.dateTime}>{date} • {time}</Text>
+          <Text style={styles.dateTime}>
+            {date} • {time}
+          </Text>
         </View>
 
         {/* Location */}
@@ -136,18 +170,26 @@ function getTagColor(tag: string): string {
   for (let i = 0; i < tag.length; i++) {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF'];
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#96CEB4",
+    "#FECA57",
+    "#FF9FF3",
+    "#54A0FF",
+  ];
   return colors[Math.abs(hash) % colors.length];
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 16,
     marginVertical: 8,
   },
   starButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     zIndex: 1,
@@ -158,25 +200,25 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   badgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 8,
     lineHeight: 22,
   },
   tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 8,
   },
   tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginRight: 12,
     marginBottom: 4,
   },
@@ -188,36 +230,36 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   track: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
   },
   host: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
   dateTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   dateTime: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginLeft: 4,
   },
   locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   location: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginLeft: 4,
     flex: 1,
   },
@@ -226,36 +268,36 @@ const styles = StyleSheet.create({
     height: 100,
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 8,
   },
   placeholderImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f0f0f0',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   placeholderTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 4,
   },
   placeholderDate: {
     fontSize: 10,
-    color: '#666',
+    color: "#666",
     marginBottom: 2,
   },
   placeholderTime: {
     fontSize: 10,
-    color: '#666',
+    color: "#666",
     marginBottom: 2,
   },
   placeholderLocation: {
     fontSize: 10,
-    color: '#666',
+    color: "#666",
   },
 });

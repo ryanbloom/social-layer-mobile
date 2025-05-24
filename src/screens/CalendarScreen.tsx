@@ -73,6 +73,8 @@ export default function CalendarScreen() {
         const isSelected = currentDate.toDateString() === selectedDate.toDateString();
         const isToday = currentDate.toDateString() === new Date().toDateString();
         
+        const dayDate = new Date(currentDate);
+        
         weekDays.push(
           <TouchableOpacity
             key={currentDate.toISOString()}
@@ -81,7 +83,7 @@ export default function CalendarScreen() {
               isSelected && styles.selectedDay,
               isToday && styles.todayDay,
             ]}
-            onPress={() => setSelectedDate(new Date(currentDate))}
+            onPress={() => setSelectedDate(dayDate)}
           >
             <Text
               style={[

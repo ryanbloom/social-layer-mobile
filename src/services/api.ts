@@ -17,6 +17,7 @@ const GRAPH_URL = Constants.expoConfig?.extra?.graphUrl;
 
 // Group Configuration - Edge Esmeralda Pop-up City
 const DEFAULT_GROUP_ID = 3579;
+const LOCAL_TIMEZONE = 'America/Los_Angeles'; // PDT/PST
 
 if (!API_URL || !GRAPH_URL) {
   throw new Error("Missing configuration: API_URL or GRAPH_URL is not defined");
@@ -386,3 +387,6 @@ export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
     },
   };
 };
+
+// Export timezone for use in components
+export { LOCAL_TIMEZONE };
