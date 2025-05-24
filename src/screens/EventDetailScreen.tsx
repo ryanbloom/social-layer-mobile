@@ -14,10 +14,12 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 
 import { RootStackParamList } from '../types';
-import { apolloClient, GET_EVENT_DETAIL } from '../services/api';
+import { apolloClient, GET_EVENT_DETAIL, attendEvent, cancelAttendance, getAuthToken } from '../services/api';
+import { gql } from '@apollo/client';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { formatEventDuration, getEventStatus } from '../utils/dateUtils';
+import { useAuth } from '../contexts/AuthContext';
 
 type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
 
@@ -25,27 +27,118 @@ export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
   const { eventId } = route.params;
   const [isRSVPing, setIsRSVPing] = useState(false);
+  const { user } = useAuth();
 
-  const { data: event, isLoading, error } = useQuery({
+  const { data: event, isLoading, error, refetch } = useQuery({
     queryKey: ['event', eventId],
     queryFn: async () => {
-      const result = await apolloClient.query({
-        query: GET_EVENT_DETAIL,
-        variables: { id: eventId },
-      });
-      return result.data.events_by_pk;
+      console.log('=== EventDetailScreen Debug ===');
+      console.log('Raw eventId from route params:', eventId);
+      console.log('eventId type:', typeof eventId);
+      console.log('eventId value:', JSON.stringify(eventId));
+      
+      const parsedId = parseInt(eventId.toString(), 10);
+      console.log('Parsed eventId:', parsedId);
+      console.log('Parsed eventId type:', typeof parsedId);
+      console.log('Is parsedId valid number?', !isNaN(parsedId));
+      
+      console.log('Making GraphQL query with variables:', { id: parsedId });
+      console.log('GraphQL query string:', GET_EVENT_DETAIL.loc?.source?.body);
+      
+      // Try a simple query first to see if the event exists
+      const SIMPLE_EVENT_QUERY = gql`
+        query GetSimpleEvent($id: bigint!) {
+          events_by_pk(id: $id) {
+            id
+            title
+            start_time
+            end_time
+          }
+        }
+      `;
+      
+      console.log('Trying simple query first...');
+      
+      try {
+        const simpleResult = await apolloClient.query({
+          query: SIMPLE_EVENT_QUERY,
+          variables: { id: parsedId },
+          fetchPolicy: 'network-only',
+          errorPolicy: 'all',
+        });
+        
+        console.log('Simple query result:', simpleResult.data);
+        
+        if (!simpleResult.data.events_by_pk) {
+          console.log('Event not found with simple query');
+          return null;
+        }
+        
+        console.log('Event exists, trying full query...');
+        
+        const result = await apolloClient.query({
+          query: GET_EVENT_DETAIL,
+          variables: { id: parsedId },
+          fetchPolicy: 'network-only',
+          errorPolicy: 'all', // Get partial data even if there are errors
+        });
+        
+        console.log('GraphQL query successful');
+        console.log('Result data:', JSON.stringify(result.data, null, 2));
+        console.log('events_by_pk value:', result.data.events_by_pk);
+        
+        if (!result.data.events_by_pk) {
+          console.log('WARNING: events_by_pk is null/undefined');
+        }
+        
+        return result.data.events_by_pk;
+      } catch (error) {
+        console.log('GraphQL query failed with error:', error);
+        console.log('Error message:', error.message);
+        console.log('Error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
     },
   });
 
+  // Check if user is already attending this event
+  const isUserAttending = user && event?.participants?.some(
+    (participant: any) => participant.profile.id === user.id && 
+    ['applied', 'attending', 'checked'].includes(participant.status)
+  );
+
   const handleRSVP = async () => {
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to RSVP to events.');
+      return;
+    }
+
     setIsRSVPing(true);
     
     try {
-      // TODO: Implement RSVP functionality
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      Alert.alert('Success', 'Successfully RSVP\'d to event!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to RSVP. Please try again.');
+      const authToken = await getAuthToken();
+      if (!authToken) {
+        throw new Error('No authentication token found');
+      }
+
+      const eventIdInt = parseInt(eventId.toString(), 10);
+      
+      if (isUserAttending) {
+        // Cancel attendance
+        await cancelAttendance(eventIdInt, authToken);
+        Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
+      } else {
+        // Attend event
+        await attendEvent(eventIdInt, authToken);
+        Alert.alert('Success', 'Successfully RSVP\'d to event!');
+      }
+
+      // Refresh event data to show updated participant list
+      await refetch();
+    } catch (error: any) {
+      console.error('RSVP error:', error);
+      const message = error?.message || 'Failed to update RSVP. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setIsRSVPing(false);
     }
@@ -206,14 +299,20 @@ export default function EventDetailScreen() {
         {/* RSVP Button */}
         <View style={styles.rsvpContainer}>
           <Button
-            title="RSVP to Event"
+            title={isUserAttending ? "Cancel RSVP" : "RSVP to Event"}
             onPress={handleRSVP}
             loading={isRSVPing}
             size="large"
-            style={styles.rsvpButton}
+            style={[
+              styles.rsvpButton,
+              isUserAttending && styles.cancelButton
+            ]}
           />
           <Text style={styles.rsvpNote}>
-            You can change your RSVP status at any time
+            {isUserAttending 
+              ? "You are attending this event" 
+              : "You can change your RSVP status at any time"
+            }
           </Text>
         </View>
       </View>
@@ -397,6 +496,9 @@ const styles = StyleSheet.create({
   rsvpButton: {
     width: '100%',
     marginBottom: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#FF3B30',
   },
   rsvpNote: {
     fontSize: 14,

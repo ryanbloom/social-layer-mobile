@@ -25,7 +25,6 @@ type DiscoverScreenNavigationProp = StackNavigationProp<
 >;
 
 export default function DiscoverScreen() {
-  console.log("DEBUG DiscoverScreen: Component rendering");
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();

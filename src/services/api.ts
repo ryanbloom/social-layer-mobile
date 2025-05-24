@@ -333,7 +333,7 @@ export const GET_EVENT_DETAIL = gql`
 `;
 
 export const GET_USER_EVENTS = gql`
-  query GetUserEvents($userId: bigint!) {
+  query GetUserEvents($userId: Int!) {
     participants(
       where: { profile_id: { _eq: $userId }, status: { _eq: "checked" } }
     ) {
@@ -489,6 +489,228 @@ export const verifyEmailPin = async (email: string, pin: string): Promise<string
     console.error("DEBUG API: Error type:", typeof error);
     console.error("DEBUG API: Error name:", error?.name);
     console.error("DEBUG API: Error message:", error?.message);
+    throw error;
+  }
+};
+
+// RSVP Functions
+export const attendEvent = async (
+  eventId: number,
+  authToken: string,
+): Promise<void> => {
+  const url = `${API_URL}/event/join`;
+  console.log("attendEvent: Joining event", eventId);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: eventId,
+        auth_token: authToken,
+      }),
+    });
+
+    console.log("attendEvent: Response status", response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("attendEvent: API error", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        eventId
+      });
+      throw new Error(errorText || `Failed to join event: ${response.status}`);
+    }
+
+    console.log("attendEvent: Successfully joined event", eventId);
+  } catch (error) {
+    console.error("attendEvent: Network/Parse error", {
+      error: error instanceof Error ? error.message : error,
+      url,
+      eventId
+    });
+    throw error;
+  }
+};
+
+export const cancelAttendance = async (
+  eventId: number,
+  authToken: string,
+): Promise<void> => {
+  const url = `${API_URL}/event/cancel`;
+  console.log("cancelAttendance: Canceling attendance for event", eventId);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: eventId,
+        auth_token: authToken,
+      }),
+    });
+
+    console.log("cancelAttendance: Response status", response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("cancelAttendance: API error", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        eventId
+      });
+      throw new Error(errorText || `Failed to cancel attendance: ${response.status}`);
+    }
+
+    console.log("cancelAttendance: Successfully canceled attendance for event", eventId);
+  } catch (error) {
+    console.error("cancelAttendance: Network/Parse error", {
+      error: error instanceof Error ? error.message : error,
+      url,
+      eventId
+    });
+    throw error;
+  }
+};
+
+// My Events Functions
+export const getMyEvents = async (
+  authToken: string,
+): Promise<{ attending: Event[], hosting: Event[], starred: Event[] }> => {
+  const profile = await getProfileByToken(authToken);
+  if (!profile) {
+    throw new Error("Unable to get user profile");
+  }
+
+  try {
+    // Get attending events using the GraphQL query
+    const attendingResult = await apolloClient.query({
+      query: gql`
+        query GetMyAttendingEvents($userId: Int!) {
+          participants(
+            where: { 
+              profile_id: { _eq: $userId }, 
+              status: { _in: ["applied", "attending", "checked"] }
+            }
+          ) {
+            event {
+              id
+              title
+              start_time
+              end_time
+              timezone
+              location
+              cover_url
+              content
+              tags
+              participants_count
+              max_participant
+              status
+              display
+              owner {
+                id
+                handle
+                nickname
+                image_url
+              }
+              group {
+                id
+                handle
+                nickname
+                image_url
+              }
+            }
+          }
+        }
+      `,
+      variables: { userId: profile.id },
+    });
+
+    // Get hosting events
+    const hostingResult = await apolloClient.query({
+      query: gql`
+        query GetMyHostingEvents($userId: Int!) {
+          events(
+            where: { owner_id: { _eq: $userId } }
+            order_by: { start_time: asc }
+          ) {
+            id
+            title
+            start_time
+            end_time
+            timezone
+            location
+            cover_url
+            content
+            tags
+            participants_count
+            max_participant
+            status
+            display
+            owner {
+              id
+              handle
+              nickname
+              image_url
+            }
+            group {
+              id
+              handle
+              nickname
+              image_url
+            }
+          }
+        }
+      `,
+      variables: { userId: profile.id },
+    });
+
+    // Get starred events - using REST API similar to web app
+    const starredUrl = `${API_URL}/event/starred?auth_token=${authToken}`;
+    console.log("getMyEvents: Fetching starred events from", starredUrl);
+    
+    let starredEvents: Event[] = [];
+    try {
+      const starredResponse = await fetch(starredUrl);
+      if (starredResponse.ok) {
+        const starredData = await starredResponse.json();
+        starredEvents = starredData.events || [];
+      } else {
+        console.warn("getMyEvents: Failed to fetch starred events", starredResponse.status);
+      }
+    } catch (error) {
+      console.warn("getMyEvents: Error fetching starred events", error);
+    }
+
+    const attendingEvents = attendingResult.data.participants.map((p: any) => p.event);
+    const hostingEvents = hostingResult.data.events;
+    
+    console.log("getMyEvents: Success", {
+      attending: attendingEvents.length,
+      hosting: hostingEvents.length,
+      starred: starredEvents.length
+    });
+    
+    console.log("Sample attending event IDs:", attendingEvents.slice(0, 3).map(e => e.id));
+    console.log("Sample hosting event IDs:", hostingEvents.slice(0, 3).map(e => e.id));
+    console.log("Sample starred event IDs:", starredEvents.slice(0, 3).map(e => e.id));
+
+    return {
+      attending: attendingEvents,
+      hosting: hostingEvents,
+      starred: starredEvents,
+    };
+  } catch (error) {
+    console.error("getMyEvents: Error", error);
     throw error;
   }
 };
