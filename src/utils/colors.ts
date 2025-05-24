@@ -40,5 +40,6 @@ export const colors = {
 
   // Additional utility colors
   google: "#80F7CE",
+  star: "#fce23c",
   disabled: 0.6, // opacity value
 };

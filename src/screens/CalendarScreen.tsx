@@ -22,7 +22,7 @@ import {
   unstarEvent,
   getAuthToken,
 } from "../services/api";
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 import EventCard from "../components/EventCard";
@@ -58,20 +58,22 @@ export default function CalendarScreen() {
   // Load starred events function
   const loadStarredEvents = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const authToken = await getAuthToken();
       if (!authToken) return;
-      
+
       const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
       const response = await fetch(starredUrl);
       if (response.ok) {
         const data = await response.json();
-        const starredEventIds = new Set((data.events || []).map((event: any) => event.id));
+        const starredEventIds = new Set(
+          (data.events || []).map((event: any) => event.id),
+        );
         setStarredEvents(starredEventIds);
       }
     } catch (error) {
-      console.warn('Failed to load starred events:', error);
+      console.warn("Failed to load starred events:", error);
     }
   }, [user]);
 
@@ -86,7 +88,7 @@ export default function CalendarScreen() {
       if (user) {
         loadStarredEvents();
       }
-    }, [user, loadStarredEvents])
+    }, [user, loadStarredEvents]),
   );
 
   // Load events
@@ -252,32 +254,32 @@ export default function CalendarScreen() {
 
     const handleStarPress = async (eventId: number) => {
       if (!user) {
-        Alert.alert('Sign In Required', 'Please sign in to star events.');
+        Alert.alert("Sign In Required", "Please sign in to star events.");
         return;
       }
 
       try {
         const authToken = await getAuthToken();
         if (!authToken) {
-          throw new Error('No authentication token found');
+          throw new Error("No authentication token found");
         }
 
         const isCurrentlyStarred = starredEvents.has(eventId);
-        
+
         if (isCurrentlyStarred) {
           await unstarEvent(eventId, authToken);
-          Alert.alert('Unstarred', 'Event removed from your starred list.');
+          Alert.alert("Unstarred", "Event removed from your starred list.");
         } else {
           await starEvent(eventId, authToken);
-          Alert.alert('Starred', 'Event added to your starred list!');
         }
-        
+
         // Reload starred events from server to ensure consistency
         await loadStarredEvents();
       } catch (error: any) {
-        console.error('Star/unstar error:', error);
-        const message = error?.message || 'Failed to update star status. Please try again.';
-        Alert.alert('Error', message);
+        console.error("Star/unstar error:", error);
+        const message =
+          error?.message || "Failed to update star status. Please try again.";
+        Alert.alert("Error", message);
       }
     };
 
@@ -293,7 +295,7 @@ export default function CalendarScreen() {
             {selectedDateEvents.map((event) => (
               <EventCard
                 key={event.id}
-                event={{...event, is_starred: starredEvents.has(event.id)}}
+                event={{ ...event, is_starred: starredEvents.has(event.id) }}
                 onPress={() => handleEventPress(event.id)}
                 onStarPress={() => handleStarPress(event.id)}
               />

@@ -15,11 +15,17 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 
 import { EventWithJoinStatus, RootStackParamList } from "../types";
-import { apolloClient, getEventsForGroup, starEvent, unstarEvent, getAuthToken } from "../services/api";
+import {
+  apolloClient,
+  getEventsForGroup,
+  starEvent,
+  unstarEvent,
+  getAuthToken,
+} from "../services/api";
 import EventCard from "../components/EventCard";
 import Button from "../components/Button";
 import { useAuth } from "../contexts/AuthContext";
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -83,20 +89,22 @@ export default function DiscoverScreen() {
   // Load starred events function
   const loadStarredEvents = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const authToken = await getAuthToken();
       if (!authToken) return;
-      
+
       const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
       const response = await fetch(starredUrl);
       if (response.ok) {
         const data = await response.json();
-        const starredEventIds = new Set((data.events || []).map((event: any) => event.id));
+        const starredEventIds = new Set(
+          (data.events || []).map((event: any) => event.id),
+        );
         setStarredEvents(starredEventIds);
       }
     } catch (error) {
-      console.warn('Failed to load starred events:', error);
+      console.warn("Failed to load starred events:", error);
     }
   }, [user]);
 
@@ -111,7 +119,7 @@ export default function DiscoverScreen() {
       if (user) {
         loadStarredEvents();
       }
-    }, [user, loadStarredEvents])
+    }, [user, loadStarredEvents]),
   );
 
   const onRefresh = async () => {
@@ -126,38 +134,38 @@ export default function DiscoverScreen() {
 
   const handleStarPress = async (eventId: number) => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to star events.');
+      Alert.alert("Sign In Required", "Please sign in to star events.");
       return;
     }
 
     try {
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
       const isCurrentlyStarred = starredEvents.has(eventId);
-      
+
       if (isCurrentlyStarred) {
         await unstarEvent(eventId, authToken);
-        Alert.alert('Unstarred', 'Event removed from your starred list.');
+        Alert.alert("Unstarred", "Event removed from your starred list.");
       } else {
         await starEvent(eventId, authToken);
-        Alert.alert('Starred', 'Event added to your starred list!');
       }
-      
+
       // Reload starred events from server to ensure consistency
       await loadStarredEvents();
     } catch (error: any) {
-      console.error('Star/unstar error:', error);
-      const message = error?.message || 'Failed to update star status. Please try again.';
-      Alert.alert('Error', message);
+      console.error("Star/unstar error:", error);
+      const message =
+        error?.message || "Failed to update star status. Please try again.";
+      Alert.alert("Error", message);
     }
   };
 
   const renderEventCard = ({ item }: { item: EventWithJoinStatus }) => (
     <EventCard
-      event={{...item, is_starred: starredEvents.has(item.id)}}
+      event={{ ...item, is_starred: starredEvents.has(item.id) }}
       onPress={() => handleEventPress(item.id)}
       onStarPress={() => handleStarPress(item.id)}
     />

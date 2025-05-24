@@ -43,7 +43,7 @@ export default function EventCard({
           <Ionicons
             name={event.is_starred ? "star" : "star-outline"}
             size={20}
-            color={event.is_starred ? "#FFD700" : colors.text.tertiary}
+            color={event.is_starred ? colors.star : colors.text.tertiary}
           />
         </TouchableOpacity>
       )}

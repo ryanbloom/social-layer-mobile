@@ -12,7 +12,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
-import { getMyEvents, getAuthToken, starEvent, unstarEvent } from "../services/api";
+import {
+  getMyEvents,
+  getAuthToken,
+  starEvent,
+  unstarEvent,
+} from "../services/api";
 import Button from "../components/Button";
 import EventCard from "../components/EventCard";
 import { Event, EventWithJoinStatus } from "../types";
@@ -27,32 +32,31 @@ export default function MyEventsScreen() {
 
   const handleStarPress = async (eventId: number) => {
     if (!user || !myEvents) {
-      Alert.alert('Error', 'Unable to update star status.');
+      Alert.alert("Error", "Unable to update star status.");
       return;
     }
 
     try {
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
-      const isCurrentlyStarred = myEvents.starred.some(e => e.id === eventId);
-      
+      const isCurrentlyStarred = myEvents.starred.some((e) => e.id === eventId);
+
       if (isCurrentlyStarred) {
         await unstarEvent(eventId, authToken);
-        Alert.alert('Unstarred', 'Event removed from your starred list.');
       } else {
         await starEvent(eventId, authToken);
-        Alert.alert('Starred', 'Event added to your starred list!');
       }
 
       // Refetch events to get updated starred status
       await refetch();
     } catch (error: any) {
-      console.error('Star/unstar error:', error);
-      const message = error?.message || 'Failed to update star status. Please try again.';
-      Alert.alert('Error', message);
+      console.error("Star/unstar error:", error);
+      const message =
+        error?.message || "Failed to update star status. Please try again.";
+      Alert.alert("Error", message);
     }
   };
 

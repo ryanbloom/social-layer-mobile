@@ -257,11 +257,9 @@ export default function EventDetailScreen() {
       if (isStarred) {
         // Unstar event
         await unstarEvent(eventIdInt, authToken);
-        Alert.alert("Unstarred", "Event removed from your starred list.");
       } else {
         // Star event
         await starEvent(eventIdInt, authToken);
-        Alert.alert("Starred", "Event added to your starred list!");
       }
 
       // Reload star status from server to ensure consistency
@@ -331,7 +329,7 @@ export default function EventDetailScreen() {
                 <Ionicons
                   name={isStarred ? "star" : "star-outline"}
                   size={24}
-                  color={isStarred ? colors.accent : colors.text.white}
+                  color={isStarred ? colors.star : colors.text.white}
                 />
               )}
             </TouchableOpacity>
