@@ -20,6 +20,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabNavigator() {
+  console.log('DEBUG TabNavigator: Rendering TabNavigator');
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -76,15 +77,32 @@ function TabNavigator() {
 }
 
 export default function AppNavigator() {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+
+  console.log('DEBUG AppNavigator: loading:', loading, 'user:', user?.handle || 'null');
 
   if (loading) {
+    console.log('DEBUG AppNavigator: Showing loading spinner');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
+
+  // If no user, show auth screen
+  if (!user) {
+    console.log('DEBUG AppNavigator: No user, showing AuthScreen');
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Auth" component={AuthScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  console.log('DEBUG AppNavigator: User exists, showing main app');
 
   return (
     <NavigationContainer>
@@ -114,14 +132,6 @@ export default function AppNavigator() {
           name="CreateEvent" 
           component={CreateEventScreen}
           options={{ title: 'Create Event' }}
-        />
-        <Stack.Screen 
-          name="Auth" 
-          component={AuthScreen}
-          options={{ 
-            title: 'Sign In',
-            headerShown: false 
-          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

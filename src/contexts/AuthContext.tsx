@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
-import { getAuthToken, storeAuthToken, removeAuthToken, getProfileByToken } from '../services/api';
+import { getAuthToken, storeAuthToken, removeAuthToken, getProfileByToken, sendEmailPin, verifyEmailPin } from '../services/api';
 import { Profile } from '../types';
 
 interface AuthContextType {
   user: Profile | null;
   loading: boolean;
+  actionLoading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string) => Promise<void>;
+  verifyPin: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -20,7 +23,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // For initial auth check
+  const [actionLoading, setActionLoading] = useState(false); // For sign-in actions
 
   useEffect(() => {
     initializeAuth();
@@ -62,9 +66,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInWithEmail = async (email: string) => {
+    console.log('DEBUG AuthContext: signInWithEmail called with:', email);
+    try {
+      console.log('DEBUG AuthContext: Setting actionLoading to true');
+      setActionLoading(true);
+      console.log('DEBUG AuthContext: About to call sendEmailPin');
+      await sendEmailPin(email);
+      console.log('DEBUG AuthContext: sendEmailPin completed successfully');
+    } catch (error: any) {
+      console.error('DEBUG AuthContext: Send email PIN error:', error);
+      console.error('DEBUG AuthContext: Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        type: typeof error
+      });
+      throw error;
+    } finally {
+      console.log('DEBUG AuthContext: Setting actionLoading to false');
+      setActionLoading(false);
+    }
+  };
+
+  const verifyPin = async (email: string, pin: string) => {
+    console.log('DEBUG AuthContext: verifyPin called with email:', email, 'pin:', pin);
+    try {
+      console.log('DEBUG AuthContext: Setting actionLoading to true');
+      setActionLoading(true);
+      console.log('DEBUG AuthContext: About to call verifyEmailPin');
+      const authToken = await verifyEmailPin(email, pin);
+      console.log('DEBUG AuthContext: verifyEmailPin returned token:', authToken?.substring(0, 10) + '...');
+      console.log('DEBUG AuthContext: About to store auth token');
+      await storeAuthToken(authToken);
+      
+      console.log('DEBUG AuthContext: About to get profile by token');
+      // Get user profile with the new token
+      const profile = await getProfileByToken(authToken);
+      console.log('DEBUG AuthContext: getProfileByToken returned:', profile?.handle || 'null');
+      if (profile) {
+        console.log('DEBUG AuthContext: Setting user profile');
+        setUser(profile);
+        console.log('DEBUG AuthContext: User profile set successfully');
+      } else {
+        console.error('DEBUG AuthContext: No profile returned from API');
+        throw new Error('Failed to get profile after authentication');
+      }
+    } catch (error: any) {
+      console.error('DEBUG AuthContext: PIN verification error:', error);
+      console.error('DEBUG AuthContext: Error details:', {
+        name: error?.name,
+        message: error?.message,
+        type: typeof error
+      });
+      throw error;
+    } finally {
+      console.log('DEBUG AuthContext: Setting actionLoading to false');
+      setActionLoading(false);
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       
       // For demo purposes, simulate Google OAuth flow
       console.log('Demo: Simulating Google OAuth flow...');
@@ -121,19 +185,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Google sign-in error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       await removeAuthToken();
       setUser(null);
     } catch (error) {
       console.error('Sign-out error:', error);
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -152,7 +216,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
+    actionLoading,
     signInWithGoogle,
+    signInWithEmail,
+    verifyPin,
     signOut,
     refreshProfile,
   };

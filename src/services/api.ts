@@ -376,6 +376,123 @@ export const removeAuthToken = async () => {
   await AsyncStorage.removeItem("auth_token");
 };
 
+// Email PIN authentication functions
+export const sendEmailPin = async (email: string): Promise<void> => {
+  const url = `${API_URL}/service/send_email`;
+  console.log("DEBUG API: sendEmailPin called");
+  console.log("DEBUG API: API_URL:", API_URL);
+  console.log("DEBUG API: Full URL:", url);
+  console.log("DEBUG API: Email:", email);
+
+  const requestBody = {
+    email,
+    context: 'email-signin'
+  };
+  console.log("DEBUG API: Request body:", requestBody);
+
+  try {
+    console.log("DEBUG API: About to make fetch request");
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("DEBUG API: Fetch completed");
+    console.log("DEBUG API: Response status:", response.status);
+    console.log("DEBUG API: Response statusText:", response.statusText);
+    console.log("DEBUG API: Response headers:", Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      console.log("DEBUG API: Response not OK, reading error text");
+      const errorText = await response.text();
+      console.error("DEBUG API: API error details:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        email
+      });
+      throw new Error(`Failed to send PIN: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    console.log("DEBUG API: Response OK, parsing JSON");
+    const data = await response.json();
+    console.log("DEBUG API: Success response:", data);
+  } catch (error) {
+    console.error("DEBUG API: Exception caught:", error);
+    console.error("DEBUG API: Error type:", typeof error);
+    console.error("DEBUG API: Error name:", error?.name);
+    console.error("DEBUG API: Error message:", error?.message);
+    console.error("DEBUG API: Full error object:", error);
+    throw error;
+  }
+};
+
+export const verifyEmailPin = async (email: string, pin: string): Promise<string> => {
+  const url = `${API_URL}/profile/signin_with_email`;
+  console.log("DEBUG API: verifyEmailPin called");
+  console.log("DEBUG API: URL:", url);
+  console.log("DEBUG API: Email:", email);
+  console.log("DEBUG API: PIN:", pin);
+
+  const requestBody = {
+    email,
+    code: pin
+  };
+  console.log("DEBUG API: Request body:", requestBody);
+
+  try {
+    console.log("DEBUG API: About to make fetch request");
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("DEBUG API: Fetch completed");
+    console.log("DEBUG API: Response status:", response.status);
+    console.log("DEBUG API: Response statusText:", response.statusText);
+    console.log("DEBUG API: Response headers:", Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      console.log("DEBUG API: Response not OK, reading error text");
+      const errorText = await response.text();
+      console.error("DEBUG API: API error details:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        email,
+        pin
+      });
+      throw new Error(`PIN verification failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    console.log("DEBUG API: Response OK, parsing JSON");
+    const data = await response.json();
+    console.log("DEBUG API: Success response:", data);
+    
+    if (!data.auth_token) {
+      console.error("DEBUG API: No auth_token in response:", data);
+      throw new Error('No auth token received from server');
+    }
+    
+    console.log("DEBUG API: Returning auth_token:", data.auth_token?.substring(0, 10) + '...');
+    return data.auth_token;
+  } catch (error) {
+    console.error("DEBUG API: Exception caught:", error);
+    console.error("DEBUG API: Error type:", typeof error);
+    console.error("DEBUG API: Error name:", error?.name);
+    console.error("DEBUG API: Error message:", error?.message);
+    throw error;
+  }
+};
+
 // Helper function to get events for the default group
 export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
   return {

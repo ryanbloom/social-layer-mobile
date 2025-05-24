@@ -25,9 +25,15 @@ type DiscoverScreenNavigationProp = StackNavigationProp<
 >;
 
 export default function DiscoverScreen() {
+  console.log("DEBUG DiscoverScreen: Component rendering");
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+
+  console.log(
+    "DEBUG DiscoverScreen: User in DiscoverScreen:",
+    user?.handle || "null",
+  );
 
   const {
     data: eventsData,
@@ -37,7 +43,9 @@ export default function DiscoverScreen() {
   } = useQuery({
     queryKey: ["events", "group", 3579],
     queryFn: async () => {
-      console.log("DiscoverScreen: Starting events query for Edge Esmeralda group");
+      console.log(
+        "DiscoverScreen: Starting events query for Edge Esmeralda group",
+      );
       const { query, variables } = getEventsForGroup(3579);
       console.log("DiscoverScreen: Query variables", variables);
 
@@ -134,22 +142,33 @@ export default function DiscoverScreen() {
 
   const renderSignInPrompt = () => {
     if (user) return null;
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.signInPrompt}
         onPress={() => navigation.navigate("Auth")}
       >
         <View style={styles.signInContent}>
           <View style={styles.signInText}>
             <Text style={styles.signInTitle}>Sign in to join events</Text>
-            <Text style={styles.signInDescription}>Get access to RSVPs and event management</Text>
+            <Text style={styles.signInDescription}>
+              Get access to RSVPs and event management
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </View>
       </TouchableOpacity>
     );
   };
+
+  console.log(
+    "DEBUG DiscoverScreen: About to render, isLoading:",
+    isLoading,
+    "error:",
+    !!error,
+    "eventsData:",
+    eventsData?.length || 0,
+  );
 
   return (
     <View style={styles.container}>
@@ -290,5 +309,12 @@ const styles = StyleSheet.create({
   signInDescription: {
     fontSize: 14,
     color: "#666",
+  },
+  debugText: {
+    fontSize: 14,
+    color: "#ff0000",
+    fontWeight: "bold",
+    padding: 10,
+    backgroundColor: "#ffff00",
   },
 });
