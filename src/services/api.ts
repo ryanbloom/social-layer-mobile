@@ -15,6 +15,9 @@ import { Profile, Event, EventWithJoinStatus } from "../types";
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 const GRAPH_URL = Constants.expoConfig?.extra?.graphUrl;
 
+// Group Configuration - Edge Esmeralda Pop-up City
+const DEFAULT_GROUP_ID = 3579;
+
 if (!API_URL || !GRAPH_URL) {
   throw new Error("Missing configuration: API_URL or GRAPH_URL is not defined");
 }
@@ -224,11 +227,11 @@ export const updateProfile = async (
 
 // GraphQL Queries
 export const GET_EVENTS = gql`
-  query GetEvents($limit: Int, $offset: Int, $where: events_bool_exp) {
+  query GetEvents($limit: Int, $offset: Int, $groupId: Int) {
     events(
       limit: $limit
       offset: $offset
-      where: $where
+      where: { group_id: { _eq: $groupId } }
       order_by: { start_time: asc }
     ) {
       id
@@ -370,4 +373,16 @@ export const getAuthToken = async (): Promise<string | null> => {
 
 export const removeAuthToken = async () => {
   await AsyncStorage.removeItem("auth_token");
+};
+
+// Helper function to get events for the default group
+export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
+  return {
+    query: GET_EVENTS,
+    variables: {
+      limit: 50,
+      offset: 0,
+      groupId: groupId,
+    },
+  };
 };

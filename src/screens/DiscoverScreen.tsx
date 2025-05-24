@@ -12,7 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 import { EventWithJoinStatus, RootStackParamList } from "../types";
-import { apolloClient, GET_EVENTS } from "../services/api";
+import { apolloClient, getEventsForGroup } from "../services/api";
 import EventCard from "../components/EventCard";
 import Button from "../components/Button";
 
@@ -31,22 +31,15 @@ export default function DiscoverScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["events"],
+    queryKey: ["events", "group", 3579],
     queryFn: async () => {
-      console.log("DiscoverScreen: Starting events query");
-      const variables = {
-        limit: 20,
-        offset: 0,
-        where: {
-          // status: { _eq: 'open' },
-          start_time: { _gte: new Date().toISOString() },
-        },
-      };
+      console.log("DiscoverScreen: Starting events query for Edge Esmeralda group");
+      const { query, variables } = getEventsForGroup(3579);
       console.log("DiscoverScreen: Query variables", variables);
 
       try {
         const result = await apolloClient.query({
-          query: GET_EVENTS,
+          query,
           variables,
           fetchPolicy: "network-only",
         });
@@ -153,9 +146,9 @@ export default function DiscoverScreen() {
         ListEmptyComponent={renderEmptyState}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Discover Events</Text>
+            <Text style={styles.headerTitle}>Edge Esmeralda Events</Text>
             <Text style={styles.headerSubtitle}>
-              Find exciting events happening near you
+              Discover events in the pop-up city
             </Text>
           </View>
         }
