@@ -1,8 +1,37 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import Button from '../components/Button';
 
 export default function CreateEventScreen() {
+  const navigation = useNavigation();
+  const { user } = useAuth();
+
+  const handleSignIn = () => {
+    navigation.navigate('Auth' as never);
+  };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Ionicons name="add-circle-outline" size={80} color="#ccc" />
+          <Text style={styles.title}>Sign In to Create Events</Text>
+          <Text style={styles.description}>
+            Sign in to create and manage your own events.
+          </Text>
+          <Button
+            title="Sign In"
+            onPress={handleSignIn}
+            style={styles.signInButton}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -40,5 +69,9 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: 32,
+  },
+  signInButton: {
+    minWidth: 120,
   },
 });

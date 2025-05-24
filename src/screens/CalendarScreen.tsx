@@ -1,15 +1,91 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+
+import { EventWithJoinStatus, RootStackParamList } from "../types";
+import {
+  apolloClient,
+  getEventsForGroup,
+  LOCAL_TIMEZONE,
+} from "../services/api";
+import EventCard from "../components/EventCard";
+import { formatEventTime } from "../utils/dateUtils";
+
+type CalendarScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "Main"
+>;
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const navigation = useNavigation<CalendarScreenNavigationProp>();
+
+  // Update navigation title when selected date changes
+  useEffect(() => {
+    const dateString = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    navigation.setOptions({
+      title: dateString,
+    });
+  }, [selectedDate, navigation]);
+
+  // Load events
+  const {
+    data: eventsData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["events", "group", 3579],
+    queryFn: async () => {
+      const { query, variables } = getEventsForGroup(3579);
+      const result = await apolloClient.query({
+        query,
+        variables,
+        fetchPolicy: "network-only",
+      });
+      return result.data.events as EventWithJoinStatus[];
+    },
+  });
+
+  // Helper function to check if a date has events
+  const getEventsForDate = (date: Date): EventWithJoinStatus[] => {
+    if (!eventsData) return [];
+
+    const dateStr = date.toDateString();
+    return eventsData.filter((event) => {
+      const { date: eventDate } = formatEventTime(
+        event.start_time,
+        event.timezone,
+        LOCAL_TIMEZONE,
+      );
+      const eventDateObj = new Date(event.start_time);
+      // Use timezone-corrected date for comparison
+      const correctedEventDate = new Date(
+        eventDateObj.getTime() - 7 * 60 * 60 * 1000,
+      );
+      return correctedEventDate.toDateString() === dateStr;
+    });
+  };
 
   const renderCalendarHeader = () => {
-    const monthYear = currentMonth.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric',
+    const monthYear = currentMonth.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
     });
 
     return (
@@ -24,9 +100,9 @@ export default function CalendarScreen() {
         >
           <Ionicons name="chevron-back" size={24} color="#007AFF" />
         </TouchableOpacity>
-        
+
         <Text style={styles.monthYear}>{monthYear}</Text>
-        
+
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => {
@@ -42,8 +118,8 @@ export default function CalendarScreen() {
   };
 
   const renderWeekDays = () => {
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
+    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
     return (
       <View style={styles.weekDaysContainer}>
         {weekDays.map((day) => (
@@ -62,19 +138,22 @@ export default function CalendarScreen() {
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
+
     const days = [];
     let currentDate = new Date(startDate);
-    
+
     for (let week = 0; week < 6; week++) {
       const weekDays = [];
       for (let day = 0; day < 7; day++) {
         const isCurrentMonth = currentDate.getMonth() === month;
-        const isSelected = currentDate.toDateString() === selectedDate.toDateString();
-        const isToday = currentDate.toDateString() === new Date().toDateString();
-        
+        const isSelected =
+          currentDate.toDateString() === selectedDate.toDateString();
+        const isToday =
+          currentDate.toDateString() === new Date().toDateString();
+        const hasEvents = getEventsForDate(currentDate).length > 0;
+
         const dayDate = new Date(currentDate);
-        
+
         weekDays.push(
           <TouchableOpacity
             key={currentDate.toISOString()}
@@ -95,47 +174,77 @@ export default function CalendarScreen() {
             >
               {currentDate.getDate()}
             </Text>
-            {/* TODO: Add event indicators */}
-          </TouchableOpacity>
+            {hasEvents && <View style={styles.eventIndicator} />}
+          </TouchableOpacity>,
         );
-        
+
         currentDate.setDate(currentDate.getDate() + 1);
       }
-      
+
       days.push(
         <View key={week} style={styles.weekRow}>
           {weekDays}
-        </View>
+        </View>,
       );
     }
-    
+
     return <View style={styles.calendarDays}>{days}</View>;
   };
 
   const renderSelectedDateEvents = () => {
-    const dateString = selectedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    const dateString = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
 
+    const selectedDateEvents = getEventsForDate(selectedDate);
+
+    const handleEventPress = (eventId: number) => {
+      navigation.navigate("EventDetail", { eventId });
+    };
+
+    const handleStarPress = (eventId: number) => {
+      console.log("Star pressed for event:", eventId);
+    };
+
     return (
-      <View style={styles.eventsContainer}>
-        <Text style={styles.selectedDateTitle}>{dateString}</Text>
-        <View style={styles.noEventsContainer}>
-          <Ionicons name="calendar-outline" size={48} color="#ccc" />
-          <Text style={styles.noEventsText}>No events scheduled</Text>
-          <Text style={styles.noEventsSubtext}>
-            Create an event or check other dates
-          </Text>
-        </View>
-      </View>
+      <>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Loading events...</Text>
+          </View>
+        ) : selectedDateEvents.length > 0 ? (
+          <View style={styles.eventsList}>
+            {selectedDateEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onPress={() => handleEventPress(event.id)}
+                onStarPress={() => handleStarPress(event.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.noEventsContainer}>
+            <Ionicons name="calendar-outline" size={48} color="#ccc" />
+            <Text style={styles.noEventsText}>No events scheduled</Text>
+            <Text style={styles.noEventsSubtext}>
+              Create an event or check other dates
+            </Text>
+          </View>
+        )}
+      </>
     );
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <View style={styles.calendarContainer}>
         {renderCalendarHeader()}
         {renderWeekDays()}
@@ -149,26 +258,26 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   contentContainer: {
     flexGrow: 1,
   },
   calendarContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 16,
     borderRadius: 12,
     padding: 16,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   navButton: {
@@ -176,92 +285,97 @@ const styles = StyleSheet.create({
   },
   monthYear: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   weekDaysContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 8,
   },
   weekDayItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   weekDayText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
   },
   calendarDays: {
     marginBottom: 8,
   },
   weekRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   dayItem: {
     flex: 1,
     aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 8,
     margin: 1,
   },
   selectedDay: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
   },
   todayDay: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: "#f0f8ff",
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: "#007AFF",
   },
   dayText: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   inactiveDayText: {
-    color: '#ccc',
+    color: "#ccc",
   },
   selectedDayText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   todayDayText: {
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  eventsContainer: {
-    backgroundColor: '#fff',
-    margin: 16,
-    marginTop: 0,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  selectedDateTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    color: "#007AFF",
+    fontWeight: "bold",
   },
   noEventsContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 32,
+    marginHorizontal: 16,
   },
   noEventsText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
     marginTop: 16,
     marginBottom: 4,
   },
   noEventsSubtext: {
     fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
+    color: "#999",
+    textAlign: "center",
+  },
+  eventIndicator: {
+    position: "absolute",
+    bottom: 4,
+    alignSelf: "center",
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#007AFF",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 32,
+    marginHorizontal: 16,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+  },
+  eventsList: {
+    marginHorizontal: 8,
   },
 });

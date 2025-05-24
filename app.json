@@ -26,7 +26,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-image-picker", "expo-location"],
+    "plugins": [
+      "expo-image-picker", 
+      "expo-location"
+    ],
     "extra": {
       "apiUrl": "https://api.sola.day",
       "graphUrl": "https://hasura-graph.fly.dev/v1/graphql"

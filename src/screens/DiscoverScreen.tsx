@@ -6,15 +6,18 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
 
 import { EventWithJoinStatus, RootStackParamList } from "../types";
 import { apolloClient, getEventsForGroup } from "../services/api";
 import EventCard from "../components/EventCard";
 import Button from "../components/Button";
+import { useAuth } from "../contexts/AuthContext";
 
 type DiscoverScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -24,6 +27,7 @@ type DiscoverScreenNavigationProp = StackNavigationProp<
 export default function DiscoverScreen() {
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
 
   const {
     data: eventsData,
@@ -128,6 +132,25 @@ export default function DiscoverScreen() {
     return renderError();
   }
 
+  const renderSignInPrompt = () => {
+    if (user) return null;
+    
+    return (
+      <TouchableOpacity 
+        style={styles.signInPrompt}
+        onPress={() => navigation.navigate("Auth")}
+      >
+        <View style={styles.signInContent}>
+          <View style={styles.signInText}>
+            <Text style={styles.signInTitle}>Sign in to join events</Text>
+            <Text style={styles.signInDescription}>Get access to RSVPs and event management</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -136,6 +159,17 @@ export default function DiscoverScreen() {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Edge Esmeralda Events</Text>
+              <Text style={styles.headerSubtitle}>
+                Discover events in the pop-up city
+              </Text>
+            </View>
+            {renderSignInPrompt()}
+          </View>
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -144,14 +178,6 @@ export default function DiscoverScreen() {
           />
         }
         ListEmptyComponent={renderEmptyState}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Edge Esmeralda Events</Text>
-            <Text style={styles.headerSubtitle}>
-              Discover events in the pop-up city
-            </Text>
-          </View>
-        }
       />
     </View>
   );
@@ -235,5 +261,34 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     minWidth: 120,
+  },
+  signInPrompt: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  signInContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+  },
+  signInText: {
+    flex: 1,
+  },
+  signInTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  signInDescription: {
+    fontSize: 14,
+    color: "#666",
   },
 });

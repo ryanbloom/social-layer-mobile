@@ -185,7 +185,6 @@ function getTagColor(tag: string): string {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginHorizontal: 16,
     marginVertical: 8,
   },
   starButton: {

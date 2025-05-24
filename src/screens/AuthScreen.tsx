@@ -1,21 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { signInWithGoogle, loading } = useAuth();
 
-  const handleSignIn = async () => {
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      Alert.alert(
+        'Sign In Error',
+        'Failed to sign in with Google. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleEmailSignIn = async () => {
     setIsLoading(true);
     
     try {
-      // TODO: Implement authentication
+      // TODO: Implement email authentication
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
       console.log('Sign in with email:', email);
     } catch (error) {
       console.error('Sign in error:', error);
+      Alert.alert(
+        'Sign In Error',
+        'Failed to sign in with email. Please try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -36,6 +55,21 @@ export default function AuthScreen() {
         </View>
 
         <View style={styles.form}>
+          <Button
+            title="Continue with Google"
+            onPress={handleGoogleSignIn}
+            loading={loading}
+            size="large"
+            style={[styles.signInButton, styles.googleButton]}
+            icon={<Ionicons name="logo-google" size={20} color="#fff" />}
+          />
+          
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          
           <Text style={styles.inputLabel}>Email Address</Text>
           <TextInput
             style={styles.input}
@@ -48,11 +82,12 @@ export default function AuthScreen() {
           />
           
           <Button
-            title="Sign In"
-            onPress={handleSignIn}
+            title="Continue with Email"
+            onPress={handleEmailSignIn}
             loading={isLoading}
             size="large"
-            style={styles.signInButton}
+            variant="outline"
+            style={styles.emailButton}
           />
           
           <Text style={styles.helpText}>
@@ -122,6 +157,27 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   signInButton: {
+    marginBottom: 24,
+  },
+  googleButton: {
+    backgroundColor: '#4285F4',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e0e0e0',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#666',
+    fontSize: 14,
+  },
+  emailButton: {
     marginBottom: 16,
   },
   helpText: {

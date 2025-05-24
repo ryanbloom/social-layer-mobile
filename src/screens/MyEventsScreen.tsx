@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import Button from '../components/Button';
 
 type EventTab = 'hosting' | 'attending' | 'starred';
 
 export default function MyEventsScreen() {
   const [activeTab, setActiveTab] = useState<EventTab>('attending');
+  const navigation = useNavigation();
+  const { user } = useAuth();
+
+  const handleSignIn = () => {
+    navigation.navigate('Auth' as never);
+  };
 
   const renderTabButton = (tab: EventTab, title: string, icon: string) => {
     const isActive = activeTab === tab;
@@ -66,6 +75,25 @@ export default function MyEventsScreen() {
       </ScrollView>
     );
   };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.authPrompt}>
+          <Ionicons name="calendar-outline" size={80} color="#ccc" />
+          <Text style={styles.authTitle}>Sign In to View Your Events</Text>
+          <Text style={styles.authDescription}>
+            Sign in to manage your events, RSVPs, and starred events.
+          </Text>
+          <Button
+            title="Sign In"
+            onPress={handleSignIn}
+            style={styles.signInButton}
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -161,5 +189,29 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  authPrompt: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  authTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  authDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  signInButton: {
+    minWidth: 120,
   },
 });

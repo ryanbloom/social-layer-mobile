@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { apolloClient } from './src/services/api';
+import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Create a client
@@ -28,8 +29,10 @@ export default function App() {
       <SafeAreaProvider>
         <ApolloProvider client={apolloClient}>
           <QueryClientProvider client={queryClient}>
-            <AppNavigator />
-            <StatusBar style="auto" />
+            <AuthProvider>
+              <AppNavigator />
+              <StatusBar style="auto" />
+            </AuthProvider>
           </QueryClientProvider>
         </ApolloProvider>
       </SafeAreaProvider>

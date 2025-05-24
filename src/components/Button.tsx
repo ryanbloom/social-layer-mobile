@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
 
 interface ButtonProps {
   title: string;
@@ -10,6 +10,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: React.ReactNode;
 }
 
 export default function Button({
@@ -21,6 +22,7 @@ export default function Button({
   loading = false,
   style,
   textStyle,
+  icon,
 }: ButtonProps) {
   const getButtonStyle = () => {
     const baseStyle = [styles.button, styles[`${variant}Button`], styles[`${size}Button`]];
@@ -48,7 +50,10 @@ export default function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#fff' : '#007AFF'} />
       ) : (
-        <Text style={getTextStyle()}>{title}</Text>
+        <View style={styles.content}>
+          {icon && <View style={styles.icon}>{icon}</View>}
+          <Text style={getTextStyle()}>{title}</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -63,6 +68,14 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '600',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    marginRight: 8,
   },
   
   // Variants

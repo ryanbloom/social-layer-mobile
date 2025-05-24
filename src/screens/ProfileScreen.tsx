@@ -1,15 +1,38 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import Button from '../components/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const { user, signOut } = useAuth();
 
   const handleSignIn = () => {
     navigation.navigate('Auth' as never);
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          }
+        },
+      ]
+    );
   };
 
   const renderAuthPrompt = () => (
@@ -32,7 +55,7 @@ export default function ProfileScreen() {
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <Image
-            source={{ uri: 'https://via.placeholder.com/120' }}
+            source={{ uri: user?.image_url || 'https://via.placeholder.com/120' }}
             style={styles.avatar}
           />
           <TouchableOpacity style={styles.editAvatarButton}>
@@ -40,10 +63,10 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.handle}>@johndoe</Text>
+        <Text style={styles.name}>{user?.nickname || 'Unknown User'}</Text>
+        <Text style={styles.handle}>@{user?.handle || 'unknown'}</Text>
         <Text style={styles.bio}>
-          Event enthusiast | Tech meetup organizer | Coffee lover ☕
+          {user?.about || 'No bio available'}
         </Text>
         
         <Button
@@ -96,7 +119,7 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color="#ccc" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={[styles.menuItem, styles.signOutItem]}>
+        <TouchableOpacity style={[styles.menuItem, styles.signOutItem]} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
           <Text style={[styles.menuText, styles.signOutText]}>Sign Out</Text>
         </TouchableOpacity>
@@ -104,12 +127,9 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 
-  // For demo purposes, show auth prompt. In real app, check auth state
-  const isSignedIn = false;
-
   return (
     <View style={styles.container}>
-      {isSignedIn ? renderProfileContent() : renderAuthPrompt()}
+      {user ? renderProfileContent() : renderAuthPrompt()}
     </View>
   );
 }

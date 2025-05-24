@@ -1,8 +1,11 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+
+import { useAuth } from '../contexts/AuthContext';
 
 import { RootStackParamList, TabParamList } from '../types';
 import DiscoverScreen from '../screens/DiscoverScreen';
@@ -73,6 +76,16 @@ function TabNavigator() {
 }
 
 export default function AppNavigator() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -105,7 +118,10 @@ export default function AppNavigator() {
         <Stack.Screen 
           name="Auth" 
           component={AuthScreen}
-          options={{ title: 'Sign In' }}
+          options={{ 
+            title: 'Sign In',
+            headerShown: false 
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
