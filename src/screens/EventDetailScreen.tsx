@@ -1,51 +1,103 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Image, 
-  TouchableOpacity, 
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
   ActivityIndicator,
-  Alert 
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRoute, RouteProp } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
+import { useQuery } from "@tanstack/react-query";
 
-import { RootStackParamList } from '../types';
-import { apolloClient, GET_EVENT_DETAIL, attendEvent, cancelAttendance, getAuthToken } from '../services/api';
-import { gql } from '@apollo/client';
-import Button from '../components/Button';
-import Badge from '../components/Badge';
-import { formatEventDuration, getEventStatus } from '../utils/dateUtils';
-import { useAuth } from '../contexts/AuthContext';
-import { colors } from '../utils/colors';
+import { RootStackParamList } from "../types";
+import {
+  apolloClient,
+  GET_EVENT_DETAIL,
+  attendEvent,
+  cancelAttendance,
+  getAuthToken,
+  starEvent,
+  unstarEvent,
+} from "../services/api";
+import { gql } from "@apollo/client";
+import Constants from "expo-constants";
 
-type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
+import Button from "../components/Button";
+import Badge from "../components/Badge";
+import { formatEventDuration, getEventStatus } from "../utils/dateUtils";
+import { useAuth } from "../contexts/AuthContext";
+import { colors } from "../utils/colors";
+import { Share } from "react-native";
+
+type EventDetailRouteProp = RouteProp<RootStackParamList, "EventDetail">;
 
 export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
   const { eventId } = route.params;
   const [isRSVPing, setIsRSVPing] = useState(false);
+  const [isStarring, setIsStarring] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
   const { user } = useAuth();
 
-  const { data: event, isLoading, error, refetch } = useQuery({
-    queryKey: ['event', eventId],
+  // Function to check if event is starred
+  const checkIfEventIsStarred = useCallback(async () => {
+    if (!user) {
+      setIsStarred(false);
+      return;
+    }
+
+    try {
+      const authToken = await getAuthToken();
+      if (!authToken) {
+        setIsStarred(false);
+        return;
+      }
+
+      const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
+      const response = await fetch(starredUrl);
+      if (response.ok) {
+        const data = await response.json();
+        const starredEvents = data.events || [];
+        const eventIdInt = parseInt(eventId.toString(), 10);
+        const isEventStarred = starredEvents.some(
+          (starredEvent: any) => starredEvent.id === eventIdInt,
+        );
+        setIsStarred(isEventStarred);
+      } else {
+        setIsStarred(false);
+      }
+    } catch (error) {
+      console.warn("Failed to check if event is starred:", error);
+      setIsStarred(false);
+    }
+  }, [user, eventId]);
+
+  const {
+    data: event,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["event", eventId],
     queryFn: async () => {
-      console.log('=== EventDetailScreen Debug ===');
-      console.log('Raw eventId from route params:', eventId);
-      console.log('eventId type:', typeof eventId);
-      console.log('eventId value:', JSON.stringify(eventId));
-      
+      console.log("=== EventDetailScreen Debug ===");
+      console.log("Raw eventId from route params:", eventId);
+      console.log("eventId type:", typeof eventId);
+      console.log("eventId value:", JSON.stringify(eventId));
+
       const parsedId = parseInt(eventId.toString(), 10);
-      console.log('Parsed eventId:', parsedId);
-      console.log('Parsed eventId type:', typeof parsedId);
-      console.log('Is parsedId valid number?', !isNaN(parsedId));
-      
-      console.log('Making GraphQL query with variables:', { id: parsedId });
-      console.log('GraphQL query string:', GET_EVENT_DETAIL.loc?.source?.body);
-      
+      console.log("Parsed eventId:", parsedId);
+      console.log("Parsed eventId type:", typeof parsedId);
+      console.log("Is parsedId valid number?", !isNaN(parsedId));
+
+      console.log("Making GraphQL query with variables:", { id: parsedId });
+      console.log("GraphQL query string:", GET_EVENT_DETAIL.loc?.source?.body);
+
       // Try a simple query first to see if the event exists
       const SIMPLE_EVENT_QUERY = gql`
         query GetSimpleEvent($id: bigint!) {
@@ -57,101 +109,171 @@ export default function EventDetailScreen() {
           }
         }
       `;
-      
-      console.log('Trying simple query first...');
-      
+
+      console.log("Trying simple query first...");
+
       try {
         const simpleResult = await apolloClient.query({
           query: SIMPLE_EVENT_QUERY,
           variables: { id: parsedId },
-          fetchPolicy: 'network-only',
-          errorPolicy: 'all',
+          fetchPolicy: "network-only",
+          errorPolicy: "all",
         });
-        
-        console.log('Simple query result:', simpleResult.data);
-        
+
+        console.log("Simple query result:", simpleResult.data);
+
         if (!simpleResult.data.events_by_pk) {
-          console.log('Event not found with simple query');
+          console.log("Event not found with simple query");
           return null;
         }
-        
-        console.log('Event exists, trying full query...');
-        
+
+        console.log("Event exists, trying full query...");
+
         const result = await apolloClient.query({
           query: GET_EVENT_DETAIL,
           variables: { id: parsedId },
-          fetchPolicy: 'network-only',
-          errorPolicy: 'all', // Get partial data even if there are errors
+          fetchPolicy: "network-only",
+          errorPolicy: "all", // Get partial data even if there are errors
         });
-        
-        console.log('GraphQL query successful');
-        console.log('Result data:', JSON.stringify(result.data, null, 2));
-        console.log('events_by_pk value:', result.data.events_by_pk);
-        
+
+        console.log("GraphQL query successful");
+        console.log("Result data:", JSON.stringify(result.data, null, 2));
+        console.log("events_by_pk value:", result.data.events_by_pk);
+
         if (!result.data.events_by_pk) {
-          console.log('WARNING: events_by_pk is null/undefined');
+          console.log("WARNING: events_by_pk is null/undefined");
         }
-        
-        return result.data.events_by_pk;
+
+        const eventData = result.data.events_by_pk;
+
+        // Check if user has starred this event
+        if (user && eventData) {
+          await checkIfEventIsStarred();
+        }
+
+        return eventData;
       } catch (error) {
-        console.log('GraphQL query failed with error:', error);
-        console.log('Error message:', error.message);
-        console.log('Error details:', JSON.stringify(error, null, 2));
+        console.log("GraphQL query failed with error:", error);
+        console.log("Error message:", error.message);
+        console.log("Error details:", JSON.stringify(error, null, 2));
         throw error;
       }
     },
   });
 
-  // Check if user is already attending this event
-  const isUserAttending = user && event?.participants?.some(
-    (participant: any) => participant.profile.id === user.id && 
-    ['applied', 'attending', 'checked'].includes(participant.status)
+  // Check star status when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        checkIfEventIsStarred();
+      }
+    }, [user, checkIfEventIsStarred]),
   );
+
+  // Check if user is already attending this event
+  const isUserAttending =
+    user &&
+    event?.participants?.some(
+      (participant: any) =>
+        participant.profile.id === user.id &&
+        ["applied", "attending", "checked"].includes(participant.status),
+    );
 
   const handleRSVP = async () => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to RSVP to events.');
+      Alert.alert("Sign In Required", "Please sign in to RSVP to events.");
       return;
     }
 
     setIsRSVPing(true);
-    
+
     try {
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error('No authentication token found');
+        throw new Error("No authentication token found");
       }
 
       const eventIdInt = parseInt(eventId.toString(), 10);
-      
+
       if (isUserAttending) {
         // Cancel attendance
         await cancelAttendance(eventIdInt, authToken);
-        Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
+        Alert.alert("Canceled", "You have canceled your RSVP for this event.");
       } else {
         // Attend event
         await attendEvent(eventIdInt, authToken);
-        Alert.alert('Success', 'Successfully RSVP\'d to event!');
+        Alert.alert("Success", "Successfully RSVP'd to event!");
       }
 
       // Refresh event data to show updated participant list
       await refetch();
     } catch (error: any) {
-      console.error('RSVP error:', error);
-      const message = error?.message || 'Failed to update RSVP. Please try again.';
-      Alert.alert('Error', message);
+      console.error("RSVP error:", error);
+      const message =
+        error?.message || "Failed to update RSVP. Please try again.";
+      Alert.alert("Error", message);
     } finally {
       setIsRSVPing(false);
     }
   };
 
-  const handleShare = () => {
-    Alert.alert('Share Event', 'Share functionality will be implemented here.');
+  const handleShare = async () => {
+    if (!event) return;
+
+    try {
+      // Create share message
+      const url = `https://edge-esmeralda-2025.sola.day/event/detail/${event.id}`;
+      // const shareTitle = event.title;
+      // const shareMessage = `Check out this event: ${event.title}\n\n${formatEventDuration(event.start_time, event.end_time, event.timezone)}${event.location ? `\nLocation: ${event.location}` : ''}${event.content ? `\n\n${event.content.slice(0, 200)}${event.content.length > 200 ? '...' : ''}` : ''}`;
+
+      // Check if sharing is available
+      await Share.share({
+        url: url, // iOS only
+      });
+    } catch (error) {
+      console.error("Share error:", error);
+      Alert.alert("Error", "Failed to share event. Please try again.");
+    }
   };
 
-  const handleStarToggle = () => {
-    // TODO: Implement star/unstar functionality
-    Alert.alert('Star Event', 'Star functionality will be implemented here.');
+  const handleStarToggle = async () => {
+    if (!user) {
+      Alert.alert("Sign In Required", "Please sign in to star events.");
+      return;
+    }
+
+    if (!event) return;
+
+    setIsStarring(true);
+
+    try {
+      const authToken = await getAuthToken();
+      if (!authToken) {
+        throw new Error("No authentication token found");
+      }
+
+      const eventIdInt = parseInt(eventId.toString(), 10);
+
+      if (isStarred) {
+        // Unstar event
+        await unstarEvent(eventIdInt, authToken);
+        Alert.alert("Unstarred", "Event removed from your starred list.");
+      } else {
+        // Star event
+        await starEvent(eventIdInt, authToken);
+        Alert.alert("Starred", "Event added to your starred list!");
+      }
+
+      // Reload star status from server to ensure consistency
+      await checkIfEventIsStarred();
+    } catch (error: any) {
+      console.error("Star/unstar error:", error);
+      const message =
+        error?.message || "Failed to update star status. Please try again.";
+      Alert.alert("Error", message);
+    } finally {
+      setIsStarring(false);
+    }
   };
 
   if (isLoading) {
@@ -166,7 +288,11 @@ export default function EventDetailScreen() {
   if (error || !event) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={64} color={colors.status.error} />
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={colors.status.error}
+        />
         <Text style={styles.errorTitle}>Event Not Found</Text>
         <Text style={styles.errorDescription}>
           The event you're looking for doesn't exist or has been removed.
@@ -176,36 +302,100 @@ export default function EventDetailScreen() {
   }
 
   const eventStatus = getEventStatus(event.start_time, event.end_time);
-  const duration = formatEventDuration(event.start_time, event.end_time, event.timezone);
+  const duration = formatEventDuration(
+    event.start_time,
+    event.end_time,
+    event.timezone,
+  );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       {/* Header Image - only show when image exists */}
       {event.cover_url && (
         <View style={styles.imageContainer}>
           <Image source={{ uri: event.cover_url }} style={styles.coverImage} />
-          
+
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleStarToggle}>
-              <Ionicons name="star-outline" size={24} color={colors.text.white} />
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleStarToggle}
+              disabled={isStarring}
+            >
+              {isStarring ? (
+                <ActivityIndicator size="small" color={colors.text.white} />
+              ) : (
+                <Ionicons
+                  name={isStarred ? "star" : "star-outline"}
+                  size={24}
+                  color={isStarred ? colors.accent : colors.text.white}
+                />
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Ionicons name="share-outline" size={24} color={colors.text.white} />
+              <Ionicons
+                name="share-outline"
+                size={24}
+                color={colors.text.white}
+              />
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       <View style={event.cover_url ? styles.content : styles.contentNoImage}>
+        {/* Action Buttons for events without cover image */}
+        {!event.cover_url && (
+          <View style={styles.actionButtonsNoCover}>
+            <TouchableOpacity
+              style={styles.actionButtonNoCover}
+              onPress={handleStarToggle}
+              disabled={isStarring}
+            >
+              {isStarring ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons
+                  name={isStarred ? "star" : "star-outline"}
+                  size={24}
+                  color={isStarred ? colors.accent : colors.text.secondary}
+                />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButtonNoCover}
+              onPress={handleShare}
+            >
+              <Ionicons
+                name="share-outline"
+                size={24}
+                color={colors.text.secondary}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Badges */}
         <View style={styles.badgeContainer}>
-          {eventStatus === 'past' && <Badge text="Past" variant="past" />}
-          {event.display === 'private' && <Badge text="Private" variant="private" />}
-          {event.status === 'pending' && <Badge text="Pending" variant="pending" />}
-          {event.status === 'cancel' && <Badge text="Canceled" variant="cancel" />}
-          {eventStatus === 'ongoing' && <Badge text="Ongoing" variant="ongoing" />}
-          {eventStatus === 'upcoming' && <Badge text="Upcoming" variant="upcoming" />}
+          {eventStatus === "past" && <Badge text="Past" variant="past" />}
+          {event.display === "private" && (
+            <Badge text="Private" variant="private" />
+          )}
+          {event.status === "pending" && (
+            <Badge text="Pending" variant="pending" />
+          )}
+          {event.status === "cancel" && (
+            <Badge text="Canceled" variant="cancel" />
+          )}
+          {eventStatus === "ongoing" && (
+            <Badge text="Ongoing" variant="ongoing" />
+          )}
+          {eventStatus === "upcoming" && (
+            <Badge text="Upcoming" variant="upcoming" />
+          )}
         </View>
 
         {/* Title */}
@@ -213,9 +403,11 @@ export default function EventDetailScreen() {
 
         {/* Host Info */}
         <View style={styles.hostContainer}>
-          <Image 
-            source={{ uri: event.owner.image_url || 'https://via.placeholder.com/40' }} 
-            style={styles.hostAvatar} 
+          <Image
+            source={{
+              uri: event.owner.image_url || "https://via.placeholder.com/40",
+            }}
+            style={styles.hostAvatar}
           />
           <View style={styles.hostInfo}>
             <Text style={styles.hostName}>
@@ -240,10 +432,10 @@ export default function EventDetailScreen() {
         {(event.location || event.meeting_url) && (
           <View style={styles.infoSection}>
             <View style={styles.infoItem}>
-              <Ionicons 
-                name={event.meeting_url ? "videocam" : "location"} 
-                size={24} 
-                color={colors.primary} 
+              <Ionicons
+                name={event.meeting_url ? "videocam" : "location"}
+                size={24}
+                color={colors.primary}
               />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>
@@ -300,16 +492,12 @@ export default function EventDetailScreen() {
             onPress={handleRSVP}
             loading={isRSVPing}
             size="large"
-            style={[
-              styles.rsvpButton,
-              isUserAttending && styles.cancelButton
-            ]}
+            style={[styles.rsvpButton, isUserAttending && styles.cancelButton]}
           />
           <Text style={styles.rsvpNote}>
-            {isUserAttending 
-              ? "You are attending this event" 
-              : "You can change your RSVP status at any time"
-            }
+            {isUserAttending
+              ? "You are attending this event"
+              : "You can change your RSVP status at any time"}
           </Text>
         </View>
       </View>
@@ -327,8 +515,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 16,
@@ -337,13 +525,13 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 32,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
@@ -351,30 +539,30 @@ const styles = StyleSheet.create({
   errorDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     height: 250,
   },
   coverImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   actionButtons: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     right: 16,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   actionButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 20,
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 8,
   },
   content: {
@@ -393,20 +581,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   badgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 16,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text.primary,
     marginBottom: 20,
     lineHeight: 36,
   },
   hostContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
@@ -423,7 +611,7 @@ const styles = StyleSheet.create({
   },
   hostName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.primary,
     marginBottom: 2,
   },
@@ -435,8 +623,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   infoText: {
     flex: 1,
@@ -444,7 +632,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.text.secondary,
     marginBottom: 4,
   },
@@ -458,7 +646,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text.primary,
     marginBottom: 12,
   },
@@ -471,8 +659,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   tag: {
     backgroundColor: colors.background.tertiary,
@@ -487,10 +675,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   rsvpContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   rsvpButton: {
-    width: '100%',
+    width: "100%",
     marginBottom: 12,
   },
   cancelButton: {
@@ -499,6 +687,6 @@ const styles = StyleSheet.create({
   rsvpNote: {
     fontSize: 14,
     color: colors.text.tertiary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

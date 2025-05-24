@@ -675,7 +675,7 @@ export const getMyEvents = async (
     });
 
     // Get starred events - using REST API similar to web app
-    const starredUrl = `${API_URL}/event/starred?auth_token=${authToken}`;
+    const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
     console.log("getMyEvents: Fetching starred events from", starredUrl);
     
     let starredEvents: Event[] = [];
@@ -683,7 +683,12 @@ export const getMyEvents = async (
       const starredResponse = await fetch(starredUrl);
       if (starredResponse.ok) {
         const starredData = await starredResponse.json();
-        starredEvents = starredData.events || [];
+        starredEvents = (starredData.events || []).map((e: any) => ({
+          ...e,
+          owner: e.profile,
+          geo_lat: e.geo_lat ? Number(e.geo_lat) : null,
+          geo_lng: e.geo_lng ? Number(e.geo_lng) : null,
+        })).reverse();
       } else {
         console.warn("getMyEvents: Failed to fetch starred events", starredResponse.status);
       }
@@ -725,6 +730,97 @@ export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
       groupId: groupId,
     },
   };
+};
+
+// Star/Unstar Event Functions
+export const starEvent = async (
+  eventId: number,
+  authToken: string,
+): Promise<void> => {
+  const url = `${API_URL}/comment/star`;
+  console.log("starEvent: Starring event", eventId);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        item_id: eventId,
+        auth_token: authToken,
+        item_type: 'Event'
+      }),
+    });
+
+    console.log("starEvent: Response status", response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("starEvent: API error", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        eventId
+      });
+      throw new Error(errorText || `Failed to star event: ${response.status}`);
+    }
+
+    console.log("starEvent: Successfully starred event", eventId);
+  } catch (error) {
+    console.error("starEvent: Network/Parse error", {
+      error: error instanceof Error ? error.message : error,
+      url,
+      eventId
+    });
+    throw error;
+  }
+};
+
+export const unstarEvent = async (
+  eventId: number,
+  authToken: string,
+): Promise<void> => {
+  const url = `${API_URL}/comment/unstar`;
+  console.log("unstarEvent: Unstarring event", eventId);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        item_id: eventId,
+        auth_token: authToken,
+        item_type: 'Event'
+      }),
+    });
+
+    console.log("unstarEvent: Response status", response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("unstarEvent: API error", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        eventId
+      });
+      throw new Error(errorText || `Failed to unstar event: ${response.status}`);
+    }
+
+    console.log("unstarEvent: Successfully unstarred event", eventId);
+  } catch (error) {
+    console.error("unstarEvent: Network/Parse error", {
+      error: error instanceof Error ? error.message : error,
+      url,
+      eventId
+    });
+    throw error;
+  }
 };
 
 // Export timezone for use in components

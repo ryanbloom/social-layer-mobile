@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import Button from "../components/Button";
 import { useAuth } from "../contexts/AuthContext";
-import { colors } from '../utils/colors';
+import { colors } from "../utils/colors";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -42,7 +42,11 @@ export default function ProfileScreen() {
 
   const renderAuthPrompt = () => (
     <View style={styles.authPrompt}>
-      <Ionicons name="person-circle-outline" size={80} color={colors.text.tertiary} />
+      <Ionicons
+        name="person-circle-outline"
+        size={80}
+        color={colors.text.tertiary}
+      />
       <Text style={styles.authTitle}>Sign In Required</Text>
       <Text style={styles.authDescription}>
         Sign in to view your profile, manage events, and connect with the
@@ -66,53 +70,79 @@ export default function ProfileScreen() {
             }}
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="camera" size={20} color={colors.primary} />
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.name}>{user?.nickname || "Unknown User"}</Text>
         <Text style={styles.handle}>@{user?.handle || "unknown"}</Text>
         <Text style={styles.bio}>{user?.about || "No bio available"}</Text>
-
-        <Button
-          title="Edit Profile"
-          variant="outline"
-          onPress={() => {}}
-          style={styles.editButton}
-        />
       </View>
 
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="notifications-outline" size={24} color={colors.text.secondary} />
+        {/* <TouchableOpacity style={styles.menuItem}>
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color={colors.text.secondary}
+          />
           <Text style={styles.menuText}>Notifications</Text>
-          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.text.tertiary}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color={colors.text.secondary} />
+          <Ionicons
+            name="settings-outline"
+            size={24}
+            color={colors.text.secondary}
+          />
           <Text style={styles.menuText}>Settings</Text>
-          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.text.tertiary}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
+          <Ionicons
+            name="help-circle-outline"
+            size={24}
+            color={colors.text.secondary}
+          />
           <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.text.tertiary}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="information-circle-outline" size={24} color={colors.text.secondary} />
+          <Ionicons
+            name="information-circle-outline"
+            size={24}
+            color={colors.text.secondary}
+          />
           <Text style={styles.menuText}>About</Text>
-          <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
-        </TouchableOpacity>
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.text.tertiary}
+          />
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={[styles.menuItem, styles.signOutItem]}
           onPress={handleSignOut}
         >
-          <Ionicons name="log-out-outline" size={24} color={colors.status.error} />
+          <Ionicons
+            name="log-out-outline"
+            size={24}
+            color={colors.status.error}
+          />
           <Text style={[styles.menuText, styles.signOutText]}>Sign Out</Text>
         </TouchableOpacity>
       </View>

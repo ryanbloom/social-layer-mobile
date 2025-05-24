@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 import { EventWithJoinStatus, RootStackParamList } from "../types";
@@ -17,10 +18,17 @@ import {
   apolloClient,
   getEventsForGroup,
   LOCAL_TIMEZONE,
+  starEvent,
+  unstarEvent,
+  getAuthToken,
 } from "../services/api";
+import Constants from 'expo-constants';
+
+const API_URL = Constants.expoConfig?.extra?.apiUrl;
 import EventCard from "../components/EventCard";
 import { formatEventTime } from "../utils/dateUtils";
 import { colors } from "../utils/colors";
+import { useAuth } from "../contexts/AuthContext";
 
 type CalendarScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -30,7 +38,9 @@ type CalendarScreenNavigationProp = StackNavigationProp<
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
   const navigation = useNavigation<CalendarScreenNavigationProp>();
+  const { user } = useAuth();
 
   // Update navigation title when selected date changes
   useEffect(() => {
@@ -44,6 +54,40 @@ export default function CalendarScreen() {
       headerTitle: dateString,
     });
   }, [selectedDate, navigation]);
+
+  // Load starred events function
+  const loadStarredEvents = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const authToken = await getAuthToken();
+      if (!authToken) return;
+      
+      const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
+      const response = await fetch(starredUrl);
+      if (response.ok) {
+        const data = await response.json();
+        const starredEventIds = new Set((data.events || []).map((event: any) => event.id));
+        setStarredEvents(starredEventIds);
+      }
+    } catch (error) {
+      console.warn('Failed to load starred events:', error);
+    }
+  }, [user]);
+
+  // Load starred events when user is available
+  useEffect(() => {
+    loadStarredEvents();
+  }, [loadStarredEvents]);
+
+  // Reload starred events when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        loadStarredEvents();
+      }
+    }, [user, loadStarredEvents])
+  );
 
   // Load events
   const {
@@ -206,8 +250,35 @@ export default function CalendarScreen() {
       navigation.navigate("EventDetail", { eventId });
     };
 
-    const handleStarPress = (eventId: number) => {
-      console.log("Star pressed for event:", eventId);
+    const handleStarPress = async (eventId: number) => {
+      if (!user) {
+        Alert.alert('Sign In Required', 'Please sign in to star events.');
+        return;
+      }
+
+      try {
+        const authToken = await getAuthToken();
+        if (!authToken) {
+          throw new Error('No authentication token found');
+        }
+
+        const isCurrentlyStarred = starredEvents.has(eventId);
+        
+        if (isCurrentlyStarred) {
+          await unstarEvent(eventId, authToken);
+          Alert.alert('Unstarred', 'Event removed from your starred list.');
+        } else {
+          await starEvent(eventId, authToken);
+          Alert.alert('Starred', 'Event added to your starred list!');
+        }
+        
+        // Reload starred events from server to ensure consistency
+        await loadStarredEvents();
+      } catch (error: any) {
+        console.error('Star/unstar error:', error);
+        const message = error?.message || 'Failed to update star status. Please try again.';
+        Alert.alert('Error', message);
+      }
     };
 
     return (
@@ -222,7 +293,7 @@ export default function CalendarScreen() {
             {selectedDateEvents.map((event) => (
               <EventCard
                 key={event.id}
-                event={event}
+                event={{...event, is_starred: starredEvents.has(event.id)}}
                 onPress={() => handleEventPress(event.id)}
                 onStarPress={() => handleStarPress(event.id)}
               />

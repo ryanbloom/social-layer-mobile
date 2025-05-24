@@ -162,7 +162,11 @@ export default function AuthScreen() {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Ionicons name="people-circle-outline" size={80} color={colors.primary} />
+          <Ionicons
+            name="people-circle-outline"
+            size={80}
+            color={colors.primary}
+          />
           <Text style={styles.title}>Welcome to Social Layer</Text>
           <Text style={styles.subtitle}>
             Connect with your community and discover amazing events
@@ -170,21 +174,6 @@ export default function AuthScreen() {
         </View>
 
         <View style={styles.form}>
-          <Button
-            title="Continue with Google"
-            onPress={handleGoogleSignIn}
-            loading={actionLoading}
-            size="large"
-            style={[styles.signInButton, styles.googleButton]}
-            icon={<Ionicons name="logo-google" size={20} color={colors.text.white} />}
-          />
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
           <Text style={styles.inputLabel}>Email Address</Text>
           <TextInput
             style={styles.input}
@@ -204,16 +193,6 @@ export default function AuthScreen() {
             variant="outline"
             style={styles.emailButton}
           />
-
-          <Text style={styles.helpText}>
-            Don't have an account? We'll create one for you automatically.
-          </Text>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </Text>
         </View>
       </View>
     </KeyboardAvoidingView>

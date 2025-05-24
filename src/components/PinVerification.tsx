@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "./Button";
+import { colors } from "../utils/colors";
 
 interface PinVerificationProps {
   email: string;
@@ -91,7 +92,7 @@ export default function PinVerification({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="mail-outline" size={60} color="#007AFF" />
+        <Ionicons name="mail-outline" size={60} color={colors.primary} />
         <Text style={styles.title}>Check your email</Text>
         <Text style={styles.subtitle}>
           We sent a verification code to{"\n"}
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
   },
   email: {
     fontWeight: "600",
-    color: "#007AFF",
+    color: colors.primary,
   },
   pinContainer: {
     flex: 1,
