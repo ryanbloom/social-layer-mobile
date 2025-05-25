@@ -19,7 +19,6 @@ export default function EventCard({
   onPress,
   onStarPress,
 }: EventCardProps) {
-  console.log('EventCard: Rendering event with cover_url:', event.cover_url);
   const eventStatus = getEventStatus(event.start_time, event.end_time);
   const { date, time } = formatEventTime(
     event.start_time,
@@ -158,11 +157,11 @@ export default function EventCard({
       {/* Cover Image - only show when image exists */}
       {event.cover_url && (
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ 
+          <Image
+            source={{
               uri: event.cover_url,
-              cache: 'force-cache'
-            }} 
+              cache: "force-cache",
+            }}
             style={styles.image}
             resizeMode="cover"
           />

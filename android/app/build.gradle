@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.sociallayer"
+    namespace "xyz.ryanbloom.sociallayermobile"
     defaultConfig {
-        applicationId "com.sociallayer"
+        applicationId "xyz.ryanbloom.sociallayermobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
