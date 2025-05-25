@@ -6,6 +6,9 @@ export function getEventStatus(
   const start = new Date(startTime);
   const end = new Date(endTime);
 
+  console.log(now, start, end);
+  console.log(now, correctTime(start, -14), correctTime(end, -14));
+
   if (now > end) {
     return "past";
   } else if (now >= start && now <= end) {
@@ -15,9 +18,8 @@ export function getEventStatus(
   }
 }
 
-function correctTime(date: Date): Date {
+function correctTime(date: Date, correctionHours: number = -7): Date {
   // The GraphQL API returns incorrect times, so we have to use this workaround
-  const correctionHours = -7;
   const correctionMs = correctionHours * 60 * 60 * 1000;
   return new Date(date.getTime() + correctionMs);
 }

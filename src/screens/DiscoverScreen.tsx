@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,8 @@ import {
 import EventCard from "../components/EventCard";
 import Button from "../components/Button";
 import { useAuth } from "../contexts/AuthContext";
+import { getEventStatus } from "../utils/dateUtils";
+import { colors } from "../utils/colors";
 import Constants from "expo-constants";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
@@ -34,10 +36,13 @@ type DiscoverScreenNavigationProp = StackNavigationProp<
   "Main"
 >;
 
+type EventFilter = "upcoming" | "all";
+
 export default function DiscoverScreen() {
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
+  const [eventFilter, setEventFilter] = useState<EventFilter>("upcoming");
   const { user } = useAuth();
 
   console.log(
@@ -73,6 +78,31 @@ export default function DiscoverScreen() {
       }
     },
   });
+
+  // Filter events based on the selected filter
+  const filteredEvents = useMemo(() => {
+    if (!eventsData) {
+      console.log("DEBUG: No eventsData available for filtering");
+      return [];
+    }
+
+    console.log("DEBUG: Total events available:", eventsData.length);
+
+    if (eventFilter === "upcoming") {
+      const filtered = eventsData.filter((event) => {
+        const status = getEventStatus(event.start_time, event.end_time);
+        console.log(`Event "${event.title}" status: ${status}`);
+        return status === "upcoming" || status === "ongoing";
+      });
+      console.log(
+        `Filtered ${filtered.length} upcoming/ongoing events from ${eventsData.length} total events`,
+      );
+      return filtered;
+    }
+
+    console.log("DEBUG: Returning all events:", eventsData.length);
+    return eventsData;
+  }, [eventsData, eventFilter]);
 
   useEffect(() => {
     console.log("DiscoverScreen: State changed", {
@@ -175,7 +205,9 @@ export default function DiscoverScreen() {
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateTitle}>No Events Found</Text>
       <Text style={styles.emptyStateDescription}>
-        There are no upcoming events at the moment. Check back later!
+        {eventFilter === "upcoming"
+          ? "There are no upcoming events at the moment. Check back later!"
+          : "No events found. Check back later!"}
       </Text>
       <Button
         title="Create Event"
@@ -233,19 +265,10 @@ export default function DiscoverScreen() {
     );
   };
 
-  console.log(
-    "DEBUG DiscoverScreen: About to render, isLoading:",
-    isLoading,
-    "error:",
-    !!error,
-    "eventsData:",
-    eventsData?.length || 0,
-  );
-
   return (
     <View style={styles.container}>
       <FlatList
-        data={eventsData}
+        data={filteredEvents}
         renderItem={renderEventCard}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
@@ -257,6 +280,43 @@ export default function DiscoverScreen() {
               <Text style={styles.headerSubtitle}>
                 Discover events in the pop-up city
               </Text>
+
+              {/* Event Filter Toggle */}
+              <View style={styles.filterContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    eventFilter === "upcoming" && styles.filterButtonActive,
+                  ]}
+                  onPress={() => setEventFilter("upcoming")}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      eventFilter === "upcoming" &&
+                        styles.filterButtonTextActive,
+                    ]}
+                  >
+                    Upcoming
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    eventFilter === "all" && styles.filterButtonActive,
+                  ]}
+                  onPress={() => setEventFilter("all")}
+                >
+                  <Text
+                    style={[
+                      styles.filterButtonText,
+                      eventFilter === "all" && styles.filterButtonTextActive,
+                    ]}
+                  >
+                    All
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
             {renderSignInPrompt()}
           </View>
@@ -265,7 +325,7 @@ export default function DiscoverScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#007AFF"]}
+            colors={[colors.primary]}
           />
         }
         ListEmptyComponent={renderEmptyState}
@@ -385,5 +445,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     padding: 10,
     backgroundColor: "#ffff00",
+  },
+  filterContainer: {
+    flexDirection: "row",
+    marginTop: 16,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 2,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+  },
+  filterButtonTextActive: {
+    color: "#fff",
   },
 });
