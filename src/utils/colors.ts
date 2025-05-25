@@ -1,5 +1,4 @@
 export const colors = {
-  // Primary brand color - change this single line to update the primary color throughout the app
   primary: "#13c688",
 
   // Derived colors based on primary

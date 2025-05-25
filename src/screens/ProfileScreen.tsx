@@ -67,7 +67,7 @@ export default function ProfileScreen() {
           <Image
             source={{
               uri: user?.image_url || "https://via.placeholder.com/120",
-              cache: 'force-cache'
+              cache: "force-cache",
             }}
             style={styles.avatar}
             resizeMode="cover"
@@ -193,8 +193,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     padding: 24,
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.primary,
   },
   avatarContainer: {
     position: "relative",

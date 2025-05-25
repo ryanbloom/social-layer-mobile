@@ -284,7 +284,6 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    backgroundColor: "#fff",
   },
   headerTitle: {
     fontSize: 24,

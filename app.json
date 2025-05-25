@@ -21,18 +21,23 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "xyz.ryanbloom.social-layer-mobile"
+      "package": "xyz.ryanbloom.sociallayermobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-image-picker", 
-      "expo-location"
-    ],
+    "plugins": ["expo-image-picker", "expo-location"],
     "extra": {
       "apiUrl": "https://api.sola.day",
-      "graphUrl": "https://hasura-graph.fly.dev/v1/graphql"
+      "graphUrl": "https://hasura-graph.fly.dev/v1/graphql",
+      "eas": {
+        "projectId": "cee89f5d-c55a-4cfa-b663-70dea9a19d9f"
+      }
     }
   }
 }
