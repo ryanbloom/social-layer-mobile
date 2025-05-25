@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import Button from "../components/Button";
 import PinVerification from "../components/PinVerification";
 import { useAuth } from "../contexts/AuthContext";
@@ -20,14 +22,17 @@ export default function AuthScreen() {
   const [showPinVerification, setShowPinVerification] = useState(false);
   const { user, signInWithGoogle, signInWithEmail, verifyPin, actionLoading } =
     useAuth();
+  const navigation = useNavigation();
 
-  // If user is authenticated, don't render the auth screen
-  if (user) {
-    console.log(
-      "DEBUG AuthScreen: User is authenticated, not rendering auth screen",
-    );
-    return null;
-  }
+  // Automatically dismiss auth screen when user becomes authenticated
+  useEffect(() => {
+    if (user) {
+      console.log(
+        "DEBUG AuthScreen: User is authenticated, dismissing auth screen",
+      );
+      navigation.goBack();
+    }
+  }, [user, navigation]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -127,7 +132,7 @@ export default function AuthScreen() {
   const handleCancelAuth = () => {
     setShowPinVerification(false);
     setEmail("");
-    // Could also navigate to a home screen or previous screen if needed
+    navigation.goBack();
   };
 
   if (showPinVerification) {
@@ -160,8 +165,17 @@ export default function AuthScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={handleCancelAuth}
+        >
+          <Ionicons name="close" size={24} color={colors.text.secondary} />
+        </TouchableOpacity>
+      </View>
+      
       <View style={styles.content}>
-        <View style={styles.header}>
+        <View style={styles.titleSection}>
           <Ionicons
             name="people-circle-outline"
             size={80}
@@ -207,11 +221,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: "space-between",
-    padding: 32,
+    paddingHorizontal: 32,
+    paddingBottom: 32,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    paddingTop: 60,
+  },
+  cancelButton: {
+    padding: 8,
+  },
+  titleSection: {
     alignItems: "center",
-    marginTop: 60,
+    marginTop: 20,
   },
   title: {
     fontSize: 28,

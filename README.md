@@ -3,6 +3,8 @@
 
 A React Native mobile app for the Social Layer event management platform. This app allows users to discover events, manage their RSVPs, view event calendars, and interact with the community.
 
+Note: the app, including this README, was created almost entirely by Claude Code with minimal human oversight.
+
 ## Features
 
 - **Event Discovery**: Browse and search for upcoming events
@@ -98,96 +100,3 @@ src/
    ```bash
    npm run web
    ```
-
-## Development
-
-### Code Style
-
-- Follow TypeScript best practices
-- Use consistent naming conventions
-- Comment complex logic
-- Keep components small and focused
-
-### Key Components
-
-- **EventCard**: Displays event information in a card layout
-- **Button**: Reusable button component with multiple variants
-- **Badge**: Status indicators for events
-- **Card**: Container component with shadow and styling
-
-### API Integration
-
-The app uses both REST and GraphQL APIs:
-
-- **REST**: Authentication, profile management, file uploads
-- **GraphQL**: Event data, real-time updates, complex queries
-
-### State Management
-
-- **React Query**: Server state management, caching, and synchronization
-- **AsyncStorage**: Local storage for authentication tokens and preferences
-- **React Navigation**: Navigation state management
-
-## Features to Implement
-
-### High Priority
-- [ ] Real authentication with backend
-- [ ] Real API integration
-- [ ] RSVP functionality
-- [ ] Event creation flow
-- [ ] Push notifications
-
-### Medium Priority
-- [ ] Event search and filtering
-- [ ] Social features (following, messaging)
-- [ ] Event sharing
-- [ ] Offline support
-- [ ] Performance optimizations
-
-### Low Priority
-- [ ] Maps integration for event locations
-- [ ] Advanced calendar features
-- [ ] Dark mode support
-- [ ] Accessibility improvements
-
-## API Endpoints
-
-### REST Endpoints
-- `GET /profile/me` - Get current user profile
-- `POST /profile/update` - Update user profile
-- `GET /event/get` - Get event details
-- `POST /event/create` - Create new event
-- `POST /service/upload_image` - Upload images
-
-### GraphQL Queries
-- `events` - Fetch events with filtering
-- `events_by_pk` - Get single event by ID
-- `participants` - Get event participants
-- `profiles` - Search user profiles
-
-## Contributing
-
-1. Create a feature branch from `main`
-2. Make your changes following the code style guidelines
-3. Test your changes on both iOS and Android
-4. Submit a pull request with a clear description
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Metro bundler issues**: Clear cache with `npx expo start --clear`
-2. **iOS simulator not working**: Reset simulator or restart it
-3. **Android emulator issues**: Check Android Studio setup
-4. **Network requests failing**: Verify API endpoints in environment variables
-
-### Performance Tips
-
-- Use `React.memo` for expensive components
-- Implement lazy loading for large lists
-- Optimize images with proper sizing
-- Use React Query for efficient data fetching
-
-## License
-
-This project is part of the Social Layer platform. See the main repository for license information.

@@ -91,19 +91,7 @@ export default function AppNavigator() {
     );
   }
 
-  // If no user, show auth screen
-  if (!user) {
-    console.log('DEBUG AppNavigator: No user, showing AuthScreen');
-    return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Auth" component={AuthScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
-  }
-
-  console.log('DEBUG AppNavigator: User exists, showing main app');
+  console.log('DEBUG AppNavigator: Showing main app with optional authentication');
 
   return (
     <NavigationContainer>
@@ -133,6 +121,14 @@ export default function AppNavigator() {
           name="CreateEvent" 
           component={CreateEventScreen}
           options={{ title: 'Create Event' }}
+        />
+        <Stack.Screen 
+          name="Auth" 
+          component={AuthScreen}
+          options={{ 
+            headerShown: false,
+            presentation: 'modal'
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
+import { useRoute, RouteProp, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 
 import { RootStackParamList } from "../types";
@@ -38,6 +38,7 @@ type EventDetailRouteProp = RouteProp<RootStackParamList, "EventDetail">;
 
 export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
+  const navigation = useNavigation();
   const { eventId } = route.params;
   const [isRSVPing, setIsRSVPing] = useState(false);
   const [isStarring, setIsStarring] = useState(false);
@@ -181,7 +182,14 @@ export default function EventDetailScreen() {
 
   const handleRSVP = async () => {
     if (!user) {
-      Alert.alert("Sign In Required", "Please sign in to RSVP to events.");
+      Alert.alert(
+        "Sign In Required", 
+        "Please sign in to RSVP to events.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => navigation.navigate("Auth" as never) }
+        ]
+      );
       return;
     }
 
@@ -238,7 +246,14 @@ export default function EventDetailScreen() {
 
   const handleStarToggle = async () => {
     if (!user) {
-      Alert.alert("Sign In Required", "Please sign in to star events.");
+      Alert.alert(
+        "Sign In Required", 
+        "Please sign in to star events.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => navigation.navigate("Auth" as never) }
+        ]
+      );
       return;
     }
 
@@ -314,7 +329,18 @@ export default function EventDetailScreen() {
       {/* Header Image - only show when image exists */}
       {event.cover_url && (
         <View style={styles.imageContainer}>
-          <Image source={{ uri: event.cover_url }} style={styles.coverImage} />
+          <Image 
+            source={{ 
+              uri: event.cover_url,
+              cache: 'force-cache'
+            }} 
+            style={styles.coverImage}
+            resizeMode="cover"
+            onLoad={() => console.log('EventDetail: Cover image loaded successfully:', event.cover_url)}
+            onError={(error) => console.log('EventDetail: Cover image load error:', error.nativeEvent.error, 'URL:', event.cover_url)}
+            onLoadStart={() => console.log('EventDetail: Cover image load started:', event.cover_url)}
+            onLoadEnd={() => console.log('EventDetail: Cover image load ended:', event.cover_url)}
+          />
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
@@ -404,8 +430,14 @@ export default function EventDetailScreen() {
           <Image
             source={{
               uri: event.owner.image_url || "https://via.placeholder.com/40",
+              cache: 'force-cache'
             }}
             style={styles.hostAvatar}
+            resizeMode="cover"
+            onLoad={() => console.log('EventDetail: Host avatar loaded successfully:', event.owner.image_url)}
+            onError={(error) => console.log('EventDetail: Host avatar load error:', error.nativeEvent.error, 'URL:', event.owner.image_url)}
+            onLoadStart={() => console.log('EventDetail: Host avatar load started:', event.owner.image_url)}
+            onLoadEnd={() => console.log('EventDetail: Host avatar load ended:', event.owner.image_url)}
           />
           <View style={styles.hostInfo}>
             <Text style={styles.hostName}>

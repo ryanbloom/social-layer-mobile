@@ -67,8 +67,10 @@ export default function ProfileScreen() {
           <Image
             source={{
               uri: user?.image_url || "https://via.placeholder.com/120",
+              cache: 'force-cache'
             }}
             style={styles.avatar}
+            resizeMode="cover"
           />
         </View>
 

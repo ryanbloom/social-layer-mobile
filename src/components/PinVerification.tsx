@@ -19,9 +19,9 @@ export default function PinVerification({
   onCancel,
   loading = false,
 }: PinVerificationProps) {
-  const [pin, setPin] = useState(["", "", "", "", ""]);
+  const [pin, setPin] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const inputRef = useRef<TextInput | null>(null);
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -33,33 +33,19 @@ export default function PinVerification({
     }
   }, [resendCooldown]);
 
-  const handlePinChange = (index: number, value: string) => {
-    if (value.length > 1) return; // Only allow single digit
+  const handlePinChange = (value: string) => {
+    // Remove any non-digit characters and limit to 5 digits
+    const cleanValue = value.replace(/\D/g, "").slice(0, 5);
+    setPin(cleanValue);
 
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-
-    // Auto focus next input
-    if (value && index < 4) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    // Auto submit when all digits entered
-    if (index === 4 && value && newPin.every((digit) => digit !== "")) {
-      handleVerify(newPin.join(""));
-    }
-  };
-
-  const handleKeyPress = (index: number, key: string) => {
-    // Handle backspace
-    if (key === "Backspace" && !pin[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    // Auto submit when all 5 digits entered
+    if (cleanValue.length === 5) {
+      handleVerify(cleanValue);
     }
   };
 
   const handleVerify = async (pinValue?: string) => {
-    const fullPin = pinValue || pin.join("");
+    const fullPin = pinValue || pin;
     if (fullPin.length !== 5) {
       Alert.alert("Invalid PIN", "Please enter all 5 digits");
       return;
@@ -69,8 +55,8 @@ export default function PinVerification({
       await onVerify(fullPin);
     } catch (error) {
       // Clear PIN on error
-      setPin(["", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      setPin("");
+      inputRef.current?.focus();
     }
   };
 
@@ -102,24 +88,16 @@ export default function PinVerification({
 
       <View style={styles.pinContainer}>
         <Text style={styles.pinLabel}>Enter verification code</Text>
-        <View style={styles.pinInputContainer}>
-          {pin.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              style={[styles.pinInput, digit ? styles.pinInputFilled : null]}
-              value={digit}
-              onChangeText={(value) => handlePinChange(index, value)}
-              onKeyPress={({ nativeEvent }) =>
-                handleKeyPress(index, nativeEvent.key)
-              }
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              autoFocus={index === 0}
-            />
-          ))}
-        </View>
+        <TextInput
+          ref={inputRef}
+          style={styles.pinInput}
+          value={pin}
+          onChangeText={handlePinChange}
+          keyboardType="number-pad"
+          maxLength={5}
+          selectTextOnFocus
+          autoFocus
+        />
       </View>
 
       <View style={styles.actions}>
@@ -196,13 +174,9 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 20,
   },
-  pinInputContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 12,
-  },
   pinInput: {
-    width: 48,
+    width: "100%",
+    maxWidth: 300,
     height: 56,
     borderWidth: 2,
     borderColor: "#e0e0e0",
@@ -212,10 +186,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     backgroundColor: "#fff",
-  },
-  pinInputFilled: {
-    borderColor: "#007AFF",
-    backgroundColor: "#f0f8ff",
+    letterSpacing: 8,
   },
   actions: {
     gap: 12,
