@@ -11,6 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 import {
   useRoute,
   RouteProp,
@@ -683,7 +684,7 @@ export default function EventDetailScreen() {
         {event.content && (
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>About This Event</Text>
-            <Text style={styles.description}>{event.content}</Text>
+            <Markdown style={markdownStyles}>{event.content}</Markdown>
           </View>
         )}
 
@@ -720,6 +721,90 @@ export default function EventDetailScreen() {
     </ScrollView>
   );
 }
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    lineHeight: 24,
+  },
+  heading1: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text.primary,
+    marginBottom: 12,
+    marginTop: 16,
+  },
+  heading2: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text.primary,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  heading3: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 6,
+    marginTop: 8,
+  },
+  paragraph: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  strong: {
+    color: colors.text.primary,
+    fontWeight: 'bold',
+  },
+  em: {
+    fontStyle: 'italic',
+  },
+  link: {
+    color: colors.primary,
+  },
+  list_item: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    lineHeight: 24,
+  },
+  bullet_list: {
+    marginBottom: 8,
+  },
+  ordered_list: {
+    marginBottom: 8,
+  },
+  code_inline: {
+    fontFamily: 'monospace',
+    backgroundColor: colors.background.tertiary,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 14,
+  },
+  fence: {
+    backgroundColor: colors.background.tertiary,
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  code_block: {
+    fontFamily: 'monospace',
+    fontSize: 14,
+    color: colors.text.primary,
+  },
+  blockquote: {
+    backgroundColor: colors.background.tertiary,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    paddingLeft: 12,
+    paddingVertical: 8,
+    marginVertical: 8,
+    fontStyle: 'italic',
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -891,11 +976,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: 12,
-  },
-  description: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    lineHeight: 24,
   },
   tagsSection: {
     marginBottom: 32,
