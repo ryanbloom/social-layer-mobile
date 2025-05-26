@@ -338,6 +338,16 @@ export const GET_EVENT_DETAIL = gql`
         nickname
         image_url
       }
+      event_roles {
+        role
+        nickname
+        profile {
+          id
+          handle
+          nickname
+          image_url
+        }
+      }
       group {
         id
         handle

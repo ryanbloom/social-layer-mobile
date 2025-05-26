@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,32 @@ import { colors } from '../utils/colors';
 import { Share } from 'react-native';
 
 type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
+
+interface HostAvatarProps {
+  imageUrl: string;
+  hostName: string;
+}
+
+function HostAvatar({ imageUrl, hostName }: HostAvatarProps) {
+  const [imageError, setImageError] = useState(false);
+  
+  if (imageError) {
+    return (
+      <View style={[styles.hostAvatar, styles.hostAvatarPlaceholder]}>
+        <Ionicons name="person" size={24} color={colors.text.tertiary} />
+      </View>
+    );
+  }
+  
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      style={styles.hostAvatar}
+      resizeMode="cover"
+      onError={() => setImageError(true)}
+    />
+  );
+}
 
 export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
@@ -473,21 +499,52 @@ export default function EventDetailScreen() {
         <Text style={styles.title}>{event.title}</Text>
 
         {/* Host Info */}
-        <View style={styles.hostContainer}>
-          <Image
-            source={{
-              uri: event.owner.image_url,
-              cache: 'force-cache',
-            }}
-            style={styles.hostAvatar}
-            resizeMode="cover"
-          />
-          <View style={styles.hostInfo}>
-            <Text style={styles.hostName}>
-              {event.owner.nickname || event.owner.handle}
-            </Text>
-            <Text style={styles.hostLabel}>Event Host</Text>
-          </View>
+        <View style={styles.hostSection}>
+          {(() => {
+            const customHost = event.event_roles?.find((r) => r.role === 'custom_host');
+            const groupHost = event.event_roles?.find((r) => r.role === 'group_host');
+            const cohosts = event.event_roles?.filter((r) => r.role === 'co_host') || [];
+            
+            const hosts = [];
+            
+            // Add primary host
+            if (customHost) {
+              hosts.push({ ...customHost, isPrimary: true, label: 'Custom Host' });
+            } else if (groupHost) {
+              hosts.push({ ...groupHost, isPrimary: true, label: 'Group Host' });
+            } else {
+              hosts.push({ 
+                nickname: event.owner.nickname || event.owner.handle,
+                image_url: event.owner.image_url,
+                isPrimary: true,
+                label: 'Event Host'
+              });
+            }
+            
+            // Add co-hosts
+            cohosts.forEach(cohost => {
+              hosts.push({ ...cohost, isPrimary: false, label: 'Co-Host' });
+            });
+            
+            return hosts.map((host, index) => (
+              <View key={index} style={[styles.hostContainer, index === hosts.length - 1 && styles.lastHostContainer]}>
+                {host.image_url ? (
+                  <HostAvatar 
+                    imageUrl={host.image_url} 
+                    hostName={host.nickname} 
+                  />
+                ) : (
+                  <View style={[styles.hostAvatar, styles.hostAvatarPlaceholder]}>
+                    <Ionicons name="person" size={24} color={colors.text.tertiary} />
+                  </View>
+                )}
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostName}>{host.nickname}</Text>
+                  <Text style={styles.hostLabel}>{host.label}</Text>
+                </View>
+              </View>
+            ));
+          })()}
         </View>
 
         {/* Date & Time */}
@@ -665,13 +722,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 36,
   },
-  hostContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  hostSection: {
     marginBottom: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.background.tertiary,
+  },
+  hostContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  lastHostContainer: {
+    marginBottom: 0,
   },
   hostAvatar: {
     width: 50,
@@ -679,8 +742,16 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 12,
   },
+  hostAvatarPlaceholder: {
+    backgroundColor: colors.background.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   hostInfo: {
     flex: 1,
+  },
+  hostInfoNoImage: {
+    marginLeft: 0,
   },
   hostName: {
     fontSize: 16,

@@ -3,8 +3,8 @@ export function getEventStatus(
   endTime: string
 ): 'past' | 'ongoing' | 'upcoming' {
   const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+  const start = correctTime(new Date(startTime));
+  const end = correctTime(new Date(endTime));
 
   if (now > end) {
     return 'past';
