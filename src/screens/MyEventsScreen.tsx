@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
+import { useGroup } from "../contexts/GroupContext";
 import {
   getMyEvents,
   getAuthToken,
@@ -31,6 +32,7 @@ export default function MyEventsScreen() {
   const [activeTab, setActiveTab] = useState<EventTab>("attending");
   const navigation = useNavigation();
   const { user, isDemoMode, demoStarredEvents, demoAttendingEvents, toggleDemoStar } = useAuth();
+  const { selectedGroupId } = useGroup();
 
   const handleStarPress = async (eventId: number) => {
     if (!user) {
@@ -90,7 +92,7 @@ export default function MyEventsScreen() {
 
       // Handle demo mode - get group events and filter them
       if (isDemoMode) {
-        const { query, variables } = getEventsForGroup(3579); // Edge Esmeralda group
+        const { query, variables } = getEventsForGroup(selectedGroupId);
         const result = await apolloClient.query({
           query,
           variables,

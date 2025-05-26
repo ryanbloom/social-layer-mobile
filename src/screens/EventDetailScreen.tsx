@@ -10,7 +10,12 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRoute, RouteProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+} from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 
 import { RootStackParamList } from "../types";
@@ -31,6 +36,7 @@ import Button from "../components/Button";
 import Badge from "../components/Badge";
 import { formatEventDuration, getEventStatus } from "../utils/dateUtils";
 import { useAuth } from "../contexts/AuthContext";
+import { useGroup } from "../contexts/GroupContext";
 import { colors } from "../utils/colors";
 import { Share } from "react-native";
 
@@ -43,7 +49,15 @@ export default function EventDetailScreen() {
   const [isRSVPing, setIsRSVPing] = useState(false);
   const [isStarring, setIsStarring] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
-  const { user, isDemoMode, demoStarredEvents, demoAttendingEvents, toggleDemoStar, toggleDemoAttendance } = useAuth();
+  const {
+    user,
+    isDemoMode,
+    demoStarredEvents,
+    demoAttendingEvents,
+    toggleDemoStar,
+    toggleDemoAttendance,
+  } = useAuth();
+  const { allGroups } = useGroup();
 
   // Function to check if event is starred
   const checkIfEventIsStarred = useCallback(async () => {
@@ -144,7 +158,6 @@ export default function EventDetailScreen() {
           errorPolicy: "all", // Get partial data even if there are errors
         });
 
-        console.log("GraphQL query successful");
         console.log("Result data:", JSON.stringify(result.data, null, 2));
         console.log("events_by_pk value:", result.data.events_by_pk);
 
@@ -181,13 +194,13 @@ export default function EventDetailScreen() {
   // Check if user is already attending this event
   const isUserAttending = (() => {
     if (!user || !event) return false;
-    
+
     // Handle demo mode
     if (isDemoMode) {
       const eventIdInt = parseInt(eventId.toString(), 10);
       return demoAttendingEvents.has(eventIdInt);
     }
-    
+
     // Regular mode - check participants list
     return event.participants?.some(
       (participant: any) =>
@@ -198,14 +211,13 @@ export default function EventDetailScreen() {
 
   const handleRSVP = async () => {
     if (!user) {
-      Alert.alert(
-        "Sign In Required", 
-        "Please sign in to RSVP to events.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Sign In", onPress: () => navigation.navigate("Auth" as never) }
-        ]
-      );
+      Alert.alert("Sign In Required", "Please sign in to RSVP to events.", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign In",
+          onPress: () => navigation.navigate("Auth" as never),
+        },
+      ]);
       return;
     }
 
@@ -218,7 +230,10 @@ export default function EventDetailScreen() {
       if (isDemoMode) {
         toggleDemoAttendance(eventIdInt);
         if (isUserAttending) {
-          Alert.alert("Canceled", "You have canceled your RSVP for this event.");
+          Alert.alert(
+            "Canceled",
+            "You have canceled your RSVP for this event.",
+          );
         } else {
           Alert.alert("Success", "Successfully RSVP'd to event!");
         }
@@ -256,14 +271,15 @@ export default function EventDetailScreen() {
     if (!event) return;
 
     try {
-      // Create share message
-      const url = `https://edge-esmeralda-2025.sola.day/event/detail/${event.id}`;
-      // const shareTitle = event.title;
-      // const shareMessage = `Check out this event: ${event.title}\n\n${formatEventDuration(event.start_time, event.end_time, event.timezone)}${event.location ? `\nLocation: ${event.location}` : ''}${event.content ? `\n\n${event.content.slice(0, 200)}${event.content.length > 200 ? '...' : ''}` : ''}`;
+      // Find the group info for the event
+      const eventGroup = allGroups.find(group => group.id === event.group?.id);
+      const groupHandle = eventGroup?.handle || event.group?.handle || 'event';
+      
+      // Create dynamic share URL based on the group
+      const url = `https://${groupHandle}.sola.day/event/detail/${event.id}`;
 
-      // Check if sharing is available
       await Share.share({
-        url: url, // iOS only
+        url: url,
       });
     } catch (error) {
       console.error("Share error:", error);
@@ -273,14 +289,13 @@ export default function EventDetailScreen() {
 
   const handleStarToggle = async () => {
     if (!user) {
-      Alert.alert(
-        "Sign In Required", 
-        "Please sign in to star events.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Sign In", onPress: () => navigation.navigate("Auth" as never) }
-        ]
-      );
+      Alert.alert("Sign In Required", "Please sign in to star events.", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign In",
+          onPress: () => navigation.navigate("Auth" as never),
+        },
+      ]);
       return;
     }
 
@@ -363,17 +378,13 @@ export default function EventDetailScreen() {
       {/* Header Image - only show when image exists */}
       {event.cover_url && (
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ 
+          <Image
+            source={{
               uri: event.cover_url,
-              cache: 'force-cache'
-            }} 
+              cache: "force-cache",
+            }}
             style={styles.coverImage}
             resizeMode="cover"
-            onLoad={() => console.log('EventDetail: Cover image loaded successfully:', event.cover_url)}
-            onError={(error) => console.log('EventDetail: Cover image load error:', error.nativeEvent.error, 'URL:', event.cover_url)}
-            onLoadStart={() => console.log('EventDetail: Cover image load started:', event.cover_url)}
-            onLoadEnd={() => console.log('EventDetail: Cover image load ended:', event.cover_url)}
           />
 
           {/* Action Buttons */}
@@ -463,15 +474,11 @@ export default function EventDetailScreen() {
         <View style={styles.hostContainer}>
           <Image
             source={{
-              uri: event.owner.image_url || "https://via.placeholder.com/40",
-              cache: 'force-cache'
+              uri: event.owner.image_url,
+              cache: "force-cache",
             }}
             style={styles.hostAvatar}
             resizeMode="cover"
-            onLoad={() => console.log('EventDetail: Host avatar loaded successfully:', event.owner.image_url)}
-            onError={(error) => console.log('EventDetail: Host avatar load error:', error.nativeEvent.error, 'URL:', event.owner.image_url)}
-            onLoadStart={() => console.log('EventDetail: Host avatar load started:', event.owner.image_url)}
-            onLoadEnd={() => console.log('EventDetail: Host avatar load ended:', event.owner.image_url)}
           />
           <View style={styles.hostInfo}>
             <Text style={styles.hostName}>

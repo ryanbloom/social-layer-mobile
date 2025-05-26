@@ -27,9 +27,6 @@ export default function AuthScreen() {
   // Automatically dismiss auth screen when user becomes authenticated
   useEffect(() => {
     if (user) {
-      console.log(
-        "DEBUG AuthScreen: User is authenticated, dismissing auth screen",
-      );
       navigation.goBack();
     }
   }, [user, navigation]);
@@ -47,10 +44,7 @@ export default function AuthScreen() {
   };
 
   const handleEmailSignIn = async () => {
-    console.log("DEBUG: handleEmailSignIn called with email:", email);
-
     if (!email.trim()) {
-      console.log("DEBUG: Email validation failed - empty email");
       Alert.alert("Email Required", "Please enter your email address");
       return;
     }
@@ -58,20 +52,15 @@ export default function AuthScreen() {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      console.log("DEBUG: Email validation failed - invalid format");
       Alert.alert("Invalid Email", "Please enter a valid email address");
       return;
     }
 
-    console.log("DEBUG: Email validation passed, setting loading to true");
     setIsLoading(true);
 
     try {
-      console.log("DEBUG: About to call signInWithEmail");
       await signInWithEmail(email.trim());
-      console.log("DEBUG: signInWithEmail completed successfully");
       setShowPinVerification(true);
-      console.log("DEBUG: Set showPinVerification to true");
     } catch (error) {
       console.error("DEBUG: Send PIN error caught:", error);
       console.error("DEBUG: Error type:", typeof error);
@@ -85,20 +74,14 @@ export default function AuthScreen() {
         [{ text: "OK" }],
       );
     } finally {
-      console.log("DEBUG: Setting loading to false");
       setIsLoading(false);
     }
   };
 
   const handlePinVerify = async (pin: string) => {
-    console.log("DEBUG AuthScreen: handlePinVerify called with PIN:", pin);
     try {
-      console.log(
-        "DEBUG AuthScreen: About to call verifyPin with email:",
-        email.trim(),
-      );
+      console.log(email.trim());
       await verifyPin(email.trim(), pin);
-      console.log("DEBUG AuthScreen: verifyPin completed successfully");
       // Navigation will happen automatically via AuthContext
     } catch (error) {
       console.error("DEBUG AuthScreen: PIN verification error:", error);
@@ -173,7 +156,7 @@ export default function AuthScreen() {
           <Ionicons name="close" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.titleSection}>
           <Ionicons
@@ -199,7 +182,7 @@ export default function AuthScreen() {
             autoCorrect={false}
           />
 
-          {email.trim().toLowerCase() === 'example@example.com' && (
+          {email.trim().toLowerCase() === "example@example.com" && (
             <View style={styles.demoNotice}>
               <Text style={styles.demoNoticeText}>
                 🎭 Demo Mode - Sign in without verification
@@ -233,8 +216,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     padding: 16,
     paddingTop: 60,
   },
@@ -332,7 +315,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   demoNotice: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: colors.primary + "20",
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
@@ -340,7 +323,7 @@ const styles = StyleSheet.create({
   demoNoticeText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

@@ -29,6 +29,7 @@ import EventCard from "../components/EventCard";
 import { formatEventTime } from "../utils/dateUtils";
 import { colors } from "../utils/colors";
 import { useAuth } from "../contexts/AuthContext";
+import { useGroup } from "../contexts/GroupContext";
 
 type CalendarScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -41,6 +42,7 @@ export default function CalendarScreen() {
   const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
   const navigation = useNavigation<CalendarScreenNavigationProp>();
   const { user } = useAuth();
+  const { selectedGroupId } = useGroup();
 
   // Update navigation title when selected date changes
   useEffect(() => {
@@ -97,9 +99,9 @@ export default function CalendarScreen() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["events", "group", 3579],
+    queryKey: ["events", "group", selectedGroupId],
     queryFn: async () => {
-      const { query, variables } = getEventsForGroup(3579);
+      const { query, variables } = getEventsForGroup(selectedGroupId);
       const result = await apolloClient.query({
         query,
         variables,

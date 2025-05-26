@@ -9,7 +9,7 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { Profile, Event, EventWithJoinStatus } from "../types";
+import { Profile, Event, EventWithJoinStatus, Group } from "../types";
 
 // API Configuration
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
@@ -17,7 +17,7 @@ const GRAPH_URL = Constants.expoConfig?.extra?.graphUrl;
 
 // Group Configuration - Edge Esmeralda Pop-up City
 const DEFAULT_GROUP_ID = 3579;
-const LOCAL_TIMEZONE = 'America/Los_Angeles'; // PDT/PST
+const LOCAL_TIMEZONE = "America/Los_Angeles"; // PDT/PST
 
 if (!API_URL || !GRAPH_URL) {
   throw new Error("Missing configuration: API_URL or GRAPH_URL is not defined");
@@ -33,38 +33,46 @@ const httpLink = createHttpLink({
 
 const authLink = setContext(async (_, { headers }) => {
   const token = await AsyncStorage.getItem("auth_token");
-  console.log("Apollo: Setting auth header", token ? "Token present" : "No token");
-  
+  console.log(
+    "Apollo: Setting auth header",
+    token ? "Token present" : "No token",
+  );
+
   const authHeaders: Record<string, string> = { ...headers };
-  if (token && !token.startsWith('demo_auth_token_')) {
+  if (token && !token.startsWith("demo_auth_token_")) {
     // Only set authorization header for real tokens, not demo tokens
     authHeaders.authorization = `Bearer ${token}`;
   }
-  
+
   return {
     headers: authHeaders,
   };
 });
 
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
-  if (graphQLErrors) {
-    console.error("Apollo GraphQL errors:", graphQLErrors.map(({ message, locations, path }) => ({
-      message,
-      locations,
-      path,
-      operation: operation.operationName
-    })));
-  }
+const errorLink = onError(
+  ({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors) {
+      console.error(
+        "Apollo GraphQL errors:",
+        graphQLErrors.map(({ message, locations, path }) => ({
+          message,
+          locations,
+          path,
+          operation: operation.operationName,
+        })),
+      );
+    }
 
-  if (networkError) {
-    console.error("Apollo Network error:", {
-      message: networkError.message,
-      operation: operation.operationName,
-      variables: operation.variables,
-      networkError
-    });
-  }
-});
+    if (networkError) {
+      console.error("Apollo Network error:", {
+        message: networkError.message,
+        operation: operation.operationName,
+        variables: operation.variables,
+        networkError,
+      });
+    }
+  },
+);
 
 export const apolloClient = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
@@ -81,17 +89,18 @@ export const getProfileByToken = async (
   }
 
   // Handle demo tokens
-  if (auth_token.startsWith('demo_auth_token_')) {
-    console.log("getProfileByToken: Demo token detected, returning demo profile");
+  if (auth_token.startsWith("demo_auth_token_")) {
+    console.log(
+      "getProfileByToken: Demo token detected, returning demo profile",
+    );
     return {
       id: 1,
-      handle: 'demo_user',
-      nickname: 'Demo User',
-      image_url: 'https://via.placeholder.com/120',
-      about: 'Demo user account',
-      email: 'example@example.com',
+      handle: "demo_user",
+      nickname: "Demo User",
+      about: "Demo user account",
+      email: "example@example.com",
       verified: false,
-      status: 'active'
+      status: "active",
     };
   }
 
@@ -100,7 +109,11 @@ export const getProfileByToken = async (
 
   try {
     const response = await fetch(url);
-    console.log("getProfileByToken: Response status", response.status, response.statusText);
+    console.log(
+      "getProfileByToken: Response status",
+      response.status,
+      response.statusText,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -108,7 +121,7 @@ export const getProfileByToken = async (
         status: response.status,
         statusText: response.statusText,
         body: errorText,
-        url
+        url,
       });
       return null;
     }
@@ -120,7 +133,7 @@ export const getProfileByToken = async (
     console.error("getProfileByToken: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      auth_token: auth_token?.substring(0, 10) + "..."
+      auth_token: auth_token?.substring(0, 10) + "...",
     });
     return null;
   }
@@ -134,7 +147,11 @@ export const getProfileByHandle = async (
 
   try {
     const response = await fetch(url);
-    console.log("getProfileByHandle: Response status", response.status, response.statusText);
+    console.log(
+      "getProfileByHandle: Response status",
+      response.status,
+      response.statusText,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -143,7 +160,7 @@ export const getProfileByHandle = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        handle
+        handle,
       });
       return null;
     }
@@ -155,7 +172,7 @@ export const getProfileByHandle = async (
     console.error("getProfileByHandle: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      handle
+      handle,
     });
     return null;
   }
@@ -169,7 +186,11 @@ export const getEventDetail = async (
 
   try {
     const response = await fetch(url);
-    console.log("getEventDetail: Response status", response.status, response.statusText);
+    console.log(
+      "getEventDetail: Response status",
+      response.status,
+      response.statusText,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -178,13 +199,12 @@ export const getEventDetail = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        event_id
+        event_id,
       });
       return null;
     }
 
     const data = await response.json();
-    console.log("getEventDetail: Success", data);
     return {
       ...data,
       venue_id: data.venue?.id,
@@ -193,7 +213,7 @@ export const getEventDetail = async (
     console.error("getEventDetail: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      event_id
+      event_id,
     });
     return null;
   }
@@ -402,78 +422,17 @@ export const sendEmailPin = async (email: string): Promise<void> => {
 
   const requestBody = {
     email,
-    context: 'email-signin'
+    context: "email-signin",
   };
-  console.log("DEBUG API: Request body:", requestBody);
 
   try {
-    console.log("DEBUG API: About to make fetch request");
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
     });
-
-    console.log("DEBUG API: Fetch completed");
-    console.log("DEBUG API: Response status:", response.status);
-    console.log("DEBUG API: Response statusText:", response.statusText);
-    console.log("DEBUG API: Response headers:", Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      console.log("DEBUG API: Response not OK, reading error text");
-      const errorText = await response.text();
-      console.error("DEBUG API: API error details:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        url,
-        email
-      });
-      throw new Error(`Failed to send PIN: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    console.log("DEBUG API: Response OK, parsing JSON");
-    const data = await response.json();
-    console.log("DEBUG API: Success response:", data);
-  } catch (error) {
-    console.error("DEBUG API: Exception caught:", error);
-    console.error("DEBUG API: Error type:", typeof error);
-    console.error("DEBUG API: Error name:", error?.name);
-    console.error("DEBUG API: Error message:", error?.message);
-    console.error("DEBUG API: Full error object:", error);
-    throw error;
-  }
-};
-
-export const verifyEmailPin = async (email: string, pin: string): Promise<string> => {
-  const url = `${API_URL}/profile/signin_with_email`;
-  console.log("DEBUG API: verifyEmailPin called");
-  console.log("DEBUG API: URL:", url);
-  console.log("DEBUG API: Email:", email);
-  console.log("DEBUG API: PIN:", pin);
-
-  const requestBody = {
-    email,
-    code: pin
-  };
-  console.log("DEBUG API: Request body:", requestBody);
-
-  try {
-    console.log("DEBUG API: About to make fetch request");
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log("DEBUG API: Fetch completed");
-    console.log("DEBUG API: Response status:", response.status);
-    console.log("DEBUG API: Response statusText:", response.statusText);
-    console.log("DEBUG API: Response headers:", Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       console.log("DEBUG API: Response not OK, reading error text");
@@ -484,21 +443,70 @@ export const verifyEmailPin = async (email: string, pin: string): Promise<string
         body: errorText,
         url,
         email,
-        pin
       });
-      throw new Error(`PIN verification failed: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to send PIN: ${response.status} ${response.statusText} - ${errorText}`,
+      );
     }
 
-    console.log("DEBUG API: Response OK, parsing JSON");
     const data = await response.json();
-    console.log("DEBUG API: Success response:", data);
-    
+  } catch (error) {
+    console.error("DEBUG API: Exception caught:", error);
+    console.error("DEBUG API: Error type:", typeof error);
+    console.error("DEBUG API: Error name:", error?.name);
+    console.error("DEBUG API: Error message:", error?.message);
+    console.error("DEBUG API: Full error object:", error);
+    throw error;
+  }
+};
+
+export const verifyEmailPin = async (
+  email: string,
+  pin: string,
+): Promise<string> => {
+  const url = `${API_URL}/profile/signin_with_email`;
+
+  const requestBody = {
+    email,
+    code: pin,
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      console.log("DEBUG API: Response not OK, reading error text");
+      const errorText = await response.text();
+      console.error("DEBUG API: API error details:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url,
+        email,
+        pin,
+      });
+      throw new Error(
+        `PIN verification failed: ${response.status} ${response.statusText} - ${errorText}`,
+      );
+    }
+
+    const data = await response.json();
+
     if (!data.auth_token) {
       console.error("DEBUG API: No auth_token in response:", data);
-      throw new Error('No auth token received from server');
+      throw new Error("No auth token received from server");
     }
-    
-    console.log("DEBUG API: Returning auth_token:", data.auth_token?.substring(0, 10) + '...');
+
+    console.log(
+      "DEBUG API: Returning auth_token:",
+      data.auth_token?.substring(0, 10) + "...",
+    );
     return data.auth_token;
   } catch (error) {
     console.error("DEBUG API: Exception caught:", error);
@@ -515,15 +523,14 @@ export const attendEvent = async (
   authToken: string,
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith('demo_auth_token_')) {
+  if (authToken.startsWith("demo_auth_token_")) {
     console.log("attendEvent: Demo mode - simulating successful RSVP", eventId);
     // Simulate a small delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     return;
   }
 
   const url = `${API_URL}/event/join`;
-  console.log("attendEvent: Joining event", eventId);
 
   try {
     const response = await fetch(url, {
@@ -537,8 +544,6 @@ export const attendEvent = async (
       }),
     });
 
-    console.log("attendEvent: Response status", response.status, response.statusText);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error("attendEvent: API error", {
@@ -546,17 +551,15 @@ export const attendEvent = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        eventId
+        eventId,
       });
       throw new Error(errorText || `Failed to join event: ${response.status}`);
     }
-
-    console.log("attendEvent: Successfully joined event", eventId);
   } catch (error) {
     console.error("attendEvent: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      eventId
+      eventId,
     });
     throw error;
   }
@@ -567,10 +570,13 @@ export const cancelAttendance = async (
   authToken: string,
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith('demo_auth_token_')) {
-    console.log("cancelAttendance: Demo mode - simulating successful cancellation", eventId);
+  if (authToken.startsWith("demo_auth_token_")) {
+    console.log(
+      "cancelAttendance: Demo mode - simulating successful cancellation",
+      eventId,
+    );
     // Simulate a small delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     return;
   }
 
@@ -589,8 +595,6 @@ export const cancelAttendance = async (
       }),
     });
 
-    console.log("cancelAttendance: Response status", response.status, response.statusText);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error("cancelAttendance: API error", {
@@ -598,17 +602,22 @@ export const cancelAttendance = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        eventId
+        eventId,
       });
-      throw new Error(errorText || `Failed to cancel attendance: ${response.status}`);
+      throw new Error(
+        errorText || `Failed to cancel attendance: ${response.status}`,
+      );
     }
 
-    console.log("cancelAttendance: Successfully canceled attendance for event", eventId);
+    console.log(
+      "cancelAttendance: Successfully canceled attendance for event",
+      eventId,
+    );
   } catch (error) {
     console.error("cancelAttendance: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      eventId
+      eventId,
     });
     throw error;
   }
@@ -617,14 +626,14 @@ export const cancelAttendance = async (
 // My Events Functions
 export const getMyEvents = async (
   authToken: string,
-): Promise<{ attending: Event[], hosting: Event[], starred: Event[] }> => {
+): Promise<{ attending: Event[]; hosting: Event[]; starred: Event[] }> => {
   const profile = await getProfileByToken(authToken);
   if (!profile) {
     throw new Error("Unable to get user profile");
   }
 
   // Handle demo mode - return empty events for the correct group only
-  if (authToken.startsWith('demo_auth_token_')) {
+  if (authToken.startsWith("demo_auth_token_")) {
     console.log("getMyEvents: Demo mode - returning empty events lists");
     return {
       attending: [],
@@ -639,8 +648,8 @@ export const getMyEvents = async (
       query: gql`
         query GetMyAttendingEvents($userId: Int!) {
           participants(
-            where: { 
-              profile_id: { _eq: $userId }, 
+            where: {
+              profile_id: { _eq: $userId }
               status: { _in: ["applied", "attending", "checked"] }
             }
           ) {
@@ -719,37 +728,53 @@ export const getMyEvents = async (
     // Get starred events - using REST API similar to web app
     const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
     console.log("getMyEvents: Fetching starred events from", starredUrl);
-    
+
     let starredEvents: Event[] = [];
     try {
       const starredResponse = await fetch(starredUrl);
       if (starredResponse.ok) {
         const starredData = await starredResponse.json();
-        starredEvents = (starredData.events || []).map((e: any) => ({
-          ...e,
-          owner: e.profile,
-          geo_lat: e.geo_lat ? Number(e.geo_lat) : null,
-          geo_lng: e.geo_lng ? Number(e.geo_lng) : null,
-        })).reverse();
+        starredEvents = (starredData.events || [])
+          .map((e: any) => ({
+            ...e,
+            owner: e.profile,
+            geo_lat: e.geo_lat ? Number(e.geo_lat) : null,
+            geo_lng: e.geo_lng ? Number(e.geo_lng) : null,
+          }))
+          .reverse();
       } else {
-        console.warn("getMyEvents: Failed to fetch starred events", starredResponse.status);
+        console.warn(
+          "getMyEvents: Failed to fetch starred events",
+          starredResponse.status,
+        );
       }
     } catch (error) {
       console.warn("getMyEvents: Error fetching starred events", error);
     }
 
-    const attendingEvents = attendingResult.data.participants.map((p: any) => p.event);
+    const attendingEvents = attendingResult.data.participants.map(
+      (p: any) => p.event,
+    );
     const hostingEvents = hostingResult.data.events;
-    
+
     console.log("getMyEvents: Success", {
       attending: attendingEvents.length,
       hosting: hostingEvents.length,
-      starred: starredEvents.length
+      starred: starredEvents.length,
     });
-    
-    console.log("Sample attending event IDs:", attendingEvents.slice(0, 3).map(e => e.id));
-    console.log("Sample hosting event IDs:", hostingEvents.slice(0, 3).map(e => e.id));
-    console.log("Sample starred event IDs:", starredEvents.slice(0, 3).map(e => e.id));
+
+    console.log(
+      "Sample attending event IDs:",
+      attendingEvents.slice(0, 3).map((e) => e.id),
+    );
+    console.log(
+      "Sample hosting event IDs:",
+      hostingEvents.slice(0, 3).map((e) => e.id),
+    );
+    console.log(
+      "Sample starred event IDs:",
+      starredEvents.slice(0, 3).map((e) => e.id),
+    );
 
     return {
       attending: attendingEvents,
@@ -762,7 +787,7 @@ export const getMyEvents = async (
   }
 };
 
-// Helper function to get events for the default group
+// Helper function to get events for a specific group
 export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
   return {
     query: GET_EVENTS,
@@ -774,16 +799,19 @@ export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
   };
 };
 
+// Export the default group ID for reference
+export { DEFAULT_GROUP_ID };
+
 // Star/Unstar Event Functions
 export const starEvent = async (
   eventId: number,
   authToken: string,
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith('demo_auth_token_')) {
+  if (authToken.startsWith("demo_auth_token_")) {
     console.log("starEvent: Demo mode - simulating successful star", eventId);
     // Simulate a small delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     return;
   }
 
@@ -799,11 +827,15 @@ export const starEvent = async (
       body: JSON.stringify({
         item_id: eventId,
         auth_token: authToken,
-        item_type: 'Event'
+        item_type: "Event",
       }),
     });
 
-    console.log("starEvent: Response status", response.status, response.statusText);
+    console.log(
+      "starEvent: Response status",
+      response.status,
+      response.statusText,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -812,7 +844,7 @@ export const starEvent = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        eventId
+        eventId,
       });
       throw new Error(errorText || `Failed to star event: ${response.status}`);
     }
@@ -822,7 +854,7 @@ export const starEvent = async (
     console.error("starEvent: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      eventId
+      eventId,
     });
     throw error;
   }
@@ -833,10 +865,13 @@ export const unstarEvent = async (
   authToken: string,
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith('demo_auth_token_')) {
-    console.log("unstarEvent: Demo mode - simulating successful unstar", eventId);
+  if (authToken.startsWith("demo_auth_token_")) {
+    console.log(
+      "unstarEvent: Demo mode - simulating successful unstar",
+      eventId,
+    );
     // Simulate a small delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     return;
   }
 
@@ -852,11 +887,15 @@ export const unstarEvent = async (
       body: JSON.stringify({
         item_id: eventId,
         auth_token: authToken,
-        item_type: 'Event'
+        item_type: "Event",
       }),
     });
 
-    console.log("unstarEvent: Response status", response.status, response.statusText);
+    console.log(
+      "unstarEvent: Response status",
+      response.status,
+      response.statusText,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -865,19 +904,123 @@ export const unstarEvent = async (
         statusText: response.statusText,
         body: errorText,
         url,
-        eventId
+        eventId,
       });
-      throw new Error(errorText || `Failed to unstar event: ${response.status}`);
+      throw new Error(
+        errorText || `Failed to unstar event: ${response.status}`,
+      );
     }
-
-    console.log("unstarEvent: Successfully unstarred event", eventId);
   } catch (error) {
     console.error("unstarEvent: Network/Parse error", {
       error: error instanceof Error ? error.message : error,
       url,
-      eventId
+      eventId,
     });
     throw error;
+  }
+};
+
+// GraphQL queries for groups
+export const GET_ALL_GROUPS = gql`
+  query GetAllGroups($limit: Int = 100) {
+    groups(
+      limit: $limit
+      order_by: { events_count: desc }
+      where: { status: { _eq: "active" } }
+    ) {
+      id
+      handle
+      nickname
+      image_url
+      about
+      events_count
+      memberships_count
+      status
+    }
+  }
+`;
+
+export const GET_USER_GROUPS = gql`
+  query GetUserGroups($userId: Int!) {
+    participants(
+      where: {
+        profile_id: { _eq: $userId }
+        status: { _in: ["applied", "attending", "checked"] }
+      }
+    ) {
+      event {
+        group {
+          id
+          handle
+          nickname
+          image_url
+          about
+          events_count
+          memberships_count
+          status
+        }
+      }
+    }
+  }
+`;
+
+// Group API Functions
+export const getAllGroups = async (): Promise<Group[]> => {
+  try {
+    const result = await apolloClient.query({
+      query: GET_ALL_GROUPS,
+      variables: { limit: 100 },
+      fetchPolicy: "network-only",
+    });
+
+    const groups = result.data.groups || [];
+    console.log("getAllGroups: Success", `${groups.length} groups`);
+    return groups as Group[];
+  } catch (error) {
+    console.error("getAllGroups: GraphQL error", error);
+    return [];
+  }
+};
+
+export const getUserGroups = async (authToken: string): Promise<Group[]> => {
+  if (!authToken || authToken.startsWith("demo_auth_token_")) {
+    console.log("getUserGroups: Demo mode or no token - returning empty array");
+    return [];
+  }
+
+  try {
+    // Get user's attended events to find groups they've RSVP'd to
+    const profile = await getProfileByToken(authToken);
+    if (!profile) {
+      return [];
+    }
+
+    console.log(
+      "getUserGroups: Fetching user groups via GraphQL for user",
+      profile.id,
+    );
+
+    const attendingResult = await apolloClient.query({
+      query: GET_USER_GROUPS,
+      variables: { userId: profile.id },
+      fetchPolicy: "network-only",
+    });
+
+    const userGroups = attendingResult.data.participants
+      .map((p: any) => p.event.group)
+      .filter((group: any) => group && group.id)
+      .reduce((unique: any[], group: any) => {
+        if (!unique.find((g) => g.id === group.id)) {
+          unique.push(group);
+        }
+        return unique;
+      }, []);
+
+    console.log("getUserGroups: Success", `${userGroups.length} user groups`);
+    return userGroups as Group[];
+  } catch (error) {
+    console.error("getUserGroups: Error", error);
+    return [];
   }
 };
 

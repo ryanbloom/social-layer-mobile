@@ -6,9 +6,6 @@ export function getEventStatus(
   const start = new Date(startTime);
   const end = new Date(endTime);
 
-  console.log(now, start, end);
-  console.log(now, correctTime(start, -14), correctTime(end, -14));
-
   if (now > end) {
     return "past";
   } else if (now >= start && now <= end) {

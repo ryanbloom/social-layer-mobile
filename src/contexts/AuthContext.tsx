@@ -1,8 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as AuthSession from 'expo-auth-session';
-import * as Crypto from 'expo-crypto';
-import { getAuthToken, storeAuthToken, removeAuthToken, getProfileByToken, sendEmailPin, verifyEmailPin } from '../services/api';
-import { Profile } from '../types';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import * as AuthSession from "expo-auth-session";
+import * as Crypto from "expo-crypto";
+import {
+  getAuthToken,
+  storeAuthToken,
+  removeAuthToken,
+  getProfileByToken,
+  sendEmailPin,
+  verifyEmailPin,
+} from "../services/api";
+import { Profile } from "../types";
 
 interface AuthContextType {
   user: Profile | null;
@@ -31,8 +44,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true); // For initial auth check
   const [actionLoading, setActionLoading] = useState(false); // For sign-in actions
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [demoStarredEvents, setDemoStarredEvents] = useState<Set<number>>(new Set());
-  const [demoAttendingEvents, setDemoAttendingEvents] = useState<Set<number>>(new Set());
+  const [demoStarredEvents, setDemoStarredEvents] = useState<Set<number>>(
+    new Set(),
+  );
+  const [demoAttendingEvents, setDemoAttendingEvents] = useState<Set<number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     initializeAuth();
@@ -44,16 +61,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const token = await getAuthToken();
       if (token) {
         // For demo purposes, if we have a demo token, create demo user
-        if (token.startsWith('demo_auth_token_')) {
+        if (token.startsWith("demo_auth_token_")) {
           const demoProfile = {
             id: 1,
-            handle: 'demo_user',
-            nickname: 'Demo User',
-            image_url: 'https://via.placeholder.com/120',
-            about: 'Demo user account',
-            email: 'example@example.com',
+            handle: "demo_user",
+            nickname: "Demo User",
+            about: "Demo user account",
+            email: "example@example.com",
             verified: false,
-            status: 'active'
+            status: "active",
           };
           setUser(demoProfile);
           setIsDemoMode(true);
@@ -69,103 +85,85 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
+      console.error("Auth initialization error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const signInWithEmail = async (email: string) => {
-    console.log('DEBUG AuthContext: signInWithEmail called with:', email);
-    
     // Check for demo account
-    if (email.trim().toLowerCase() === 'example@example.com') {
-      console.log('DEBUG AuthContext: Demo account detected, signing in directly');
+    if (email.trim().toLowerCase() === "example@example.com") {
       try {
         setActionLoading(true);
-        
+
         // Create demo token and store it
-        const demoToken = 'demo_auth_token_' + Date.now();
+        const demoToken = "demo_auth_token_" + Date.now();
         await storeAuthToken(demoToken);
-        
+
         // Create demo user profile
         const demoProfile = {
           id: 1,
-          handle: 'demo_user',
-          nickname: 'Demo User',
-          image_url: 'https://via.placeholder.com/120',
-          about: 'Demo user account',
-          email: 'example@example.com',
+          handle: "demo_user",
+          nickname: "Demo User",
+          about: "Demo user account",
+          email: "example@example.com",
           verified: false,
-          status: 'active'
+          status: "active",
         };
-        
+
         setUser(demoProfile);
         setIsDemoMode(true);
         return;
       } catch (error) {
-        console.error('DEBUG AuthContext: Demo sign-in error:', error);
+        console.error("DEBUG AuthContext: Demo sign-in error:", error);
         throw error;
       } finally {
         setActionLoading(false);
       }
     }
-    
+
     // Regular email sign-in flow
     try {
-      console.log('DEBUG AuthContext: Setting actionLoading to true');
       setActionLoading(true);
-      console.log('DEBUG AuthContext: About to call sendEmailPin');
       await sendEmailPin(email);
-      console.log('DEBUG AuthContext: sendEmailPin completed successfully');
     } catch (error: any) {
-      console.error('DEBUG AuthContext: Send email PIN error:', error);
-      console.error('DEBUG AuthContext: Error details:', {
+      console.error("DEBUG AuthContext: Send email PIN error:", error);
+      console.error("DEBUG AuthContext: Error details:", {
         name: error?.name,
         message: error?.message,
         stack: error?.stack,
-        type: typeof error
+        type: typeof error,
       });
       throw error;
     } finally {
-      console.log('DEBUG AuthContext: Setting actionLoading to false');
       setActionLoading(false);
     }
   };
 
   const verifyPin = async (email: string, pin: string) => {
-    console.log('DEBUG AuthContext: verifyPin called with email:', email, 'pin:', pin);
     try {
-      console.log('DEBUG AuthContext: Setting actionLoading to true');
       setActionLoading(true);
-      console.log('DEBUG AuthContext: About to call verifyEmailPin');
       const authToken = await verifyEmailPin(email, pin);
-      console.log('DEBUG AuthContext: verifyEmailPin returned token:', authToken?.substring(0, 10) + '...');
-      console.log('DEBUG AuthContext: About to store auth token');
       await storeAuthToken(authToken);
-      
-      console.log('DEBUG AuthContext: About to get profile by token');
+
       // Get user profile with the new token
       const profile = await getProfileByToken(authToken);
-      console.log('DEBUG AuthContext: getProfileByToken returned:', profile?.handle || 'null');
       if (profile) {
-        console.log('DEBUG AuthContext: Setting user profile');
         setUser(profile);
-        console.log('DEBUG AuthContext: User profile set successfully');
       } else {
-        console.error('DEBUG AuthContext: No profile returned from API');
-        throw new Error('Failed to get profile after authentication');
+        console.error("DEBUG AuthContext: No profile returned from API");
+        throw new Error("Failed to get profile after authentication");
       }
     } catch (error: any) {
-      console.error('DEBUG AuthContext: PIN verification error:', error);
-      console.error('DEBUG AuthContext: Error details:', {
+      console.error("DEBUG AuthContext: PIN verification error:", error);
+      console.error("DEBUG AuthContext: Error details:", {
         name: error?.name,
         message: error?.message,
-        type: typeof error
+        type: typeof error,
       });
       throw error;
     } finally {
-      console.log('DEBUG AuthContext: Setting actionLoading to false');
       setActionLoading(false);
     }
   };
@@ -173,35 +171,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       setActionLoading(true);
-      
+
       // For demo purposes, simulate Google OAuth flow
-      console.log('Demo: Simulating Google OAuth flow...');
-      
+      console.log("Demo: Simulating Google OAuth flow...");
+
       // Create a demo token to simulate successful authentication
-      const demoToken = 'demo_auth_token_' + Date.now();
-      
+      const demoToken = "demo_auth_token_" + Date.now();
+
       // Store the demo token
       await storeAuthToken(demoToken);
-      
+
       // Create a demo user profile
       const demoProfile = {
         id: 1,
-        handle: 'demo_user',
-        nickname: 'Demo User',
-        image_url: 'https://via.placeholder.com/120',
-        about: 'Demo user signed in via Google OAuth',
-        email: 'demo@gmail.com',
+        handle: "demo_user",
+        nickname: "Demo User",
+        about: "Demo user signed in via Google OAuth",
+        email: "demo@gmail.com",
         verified: false,
-        status: 'active'
+        status: "active",
       };
-      
+
       setUser(demoProfile);
       setIsDemoMode(true);
-      
+
       // TODO: Replace with actual Google OAuth flow using AuthSession:
       // const clientId = 'YOUR_GOOGLE_CLIENT_ID';
       // const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
-      // 
+      //
       // const request = new AuthSession.AuthRequest({
       //   clientId,
       //   scopes: ['openid', 'profile', 'email'],
@@ -214,20 +211,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       //     { encoding: Crypto.CryptoEncoding.BASE64URL }
       //   ),
       // });
-      // 
+      //
       // const result = await request.promptAsync({
       //   authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
       // });
-      // 
+      //
       // if (result.type === 'success') {
       //   const authToken = await exchangeCodeForToken(result.params.code);
       //   await storeAuthToken(authToken);
       //   const profile = await getProfileByToken(authToken);
       //   setUser(profile);
       // }
-      
     } catch (error: any) {
-      console.error('Google sign-in error:', error);
+      console.error("Google sign-in error:", error);
       throw error;
     } finally {
       setActionLoading(false);
@@ -243,7 +239,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setDemoStarredEvents(new Set());
       setDemoAttendingEvents(new Set());
     } catch (error) {
-      console.error('Sign-out error:', error);
+      console.error("Sign-out error:", error);
     } finally {
       setActionLoading(false);
     }
@@ -257,14 +253,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(profile);
       }
     } catch (error) {
-      console.error('Refresh profile error:', error);
+      console.error("Refresh profile error:", error);
     }
   };
 
   const toggleDemoStar = (eventId: number) => {
     if (!isDemoMode) return;
-    
-    setDemoStarredEvents(prev => {
+
+    setDemoStarredEvents((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(eventId)) {
         newSet.delete(eventId);
@@ -277,8 +273,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const toggleDemoAttendance = (eventId: number) => {
     if (!isDemoMode) return;
-    
-    setDemoAttendingEvents(prev => {
+
+    setDemoAttendingEvents((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(eventId)) {
         newSet.delete(eventId);
@@ -305,17 +301,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     toggleDemoAttendance,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

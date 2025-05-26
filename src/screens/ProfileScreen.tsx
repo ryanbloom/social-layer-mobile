@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import Button from "../components/Button";
+import GroupSelectionModal from "../components/GroupSelectionModal";
 import { useAuth } from "../contexts/AuthContext";
+import { useGroup } from "../contexts/GroupContext";
 import { colors } from "../utils/colors";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
+  const { selectedGroupId, allGroups } = useGroup();
+  const [showGroupModal, setShowGroupModal] = useState(false);
 
   const handleSignIn = () => {
     navigation.navigate("Auth" as never);
@@ -40,6 +44,13 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleSwitchGroups = () => {
+    setShowGroupModal(true);
+  };
+
+  // Find the selected group info
+  const selectedGroup = allGroups.find((group) => group.id === selectedGroupId);
+
   const renderAuthPrompt = () => (
     <View style={styles.authPrompt}>
       <Ionicons
@@ -57,6 +68,41 @@ export default function ProfileScreen() {
         onPress={handleSignIn}
         style={styles.signInButton}
       />
+
+      {/* Switch Groups section for non-authenticated users */}
+      <View style={styles.groupSection}>
+        <Text style={styles.groupSectionTitle}>Current Group</Text>
+        <TouchableOpacity
+          style={styles.groupSelector}
+          onPress={handleSwitchGroups}
+        >
+          <View style={styles.groupInfo}>
+            <Image
+              source={{
+                uri: selectedGroup?.image_url,
+                cache: "force-cache",
+              }}
+              style={styles.groupImage}
+              resizeMode="cover"
+            />
+            <View style={styles.groupTextInfo}>
+              <Text style={styles.groupName}>
+                {selectedGroup?.nickname ||
+                  selectedGroup?.handle ||
+                  "Default Group"}
+              </Text>
+              <Text style={styles.groupHandle}>
+                @{selectedGroup?.handle || "loading..."}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={colors.text.tertiary}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -66,7 +112,7 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: user?.image_url || "https://via.placeholder.com/120",
+              uri: user?.image_url,
               cache: "force-cache",
             }}
             style={styles.avatar}
@@ -80,61 +126,29 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menuContainer}>
-        {/* <TouchableOpacity style={styles.menuItem}>
-          <Ionicons
-            name="notifications-outline"
-            size={24}
-            color={colors.text.secondary}
+        <TouchableOpacity style={styles.menuItem} onPress={handleSwitchGroups}>
+          <Image
+            source={{
+              uri: selectedGroup?.image_url,
+              cache: "force-cache",
+            }}
+            style={styles.menuGroupImage}
+            resizeMode="cover"
           />
-          <Text style={styles.menuText}>Notifications</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={colors.text.tertiary}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons
-            name="settings-outline"
-            size={24}
-            color={colors.text.secondary}
-          />
-          <Text style={styles.menuText}>Settings</Text>
+          <View style={styles.menuItemContent}>
+            <Text>Switch Groups</Text>
+            <Text style={styles.menuSubtext}>
+              {selectedGroup?.nickname ||
+                selectedGroup?.handle ||
+                "Default Group"}
+            </Text>
+          </View>
           <Ionicons
             name="chevron-forward"
             size={24}
             color={colors.text.tertiary}
           />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons
-            name="help-circle-outline"
-            size={24}
-            color={colors.text.secondary}
-          />
-          <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={colors.text.tertiary}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons
-            name="information-circle-outline"
-            size={24}
-            color={colors.text.secondary}
-          />
-          <Text style={styles.menuText}>About</Text>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={colors.text.tertiary}
-          />
-        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={[styles.menuItem, styles.signOutItem]}
@@ -154,6 +168,10 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       {user ? renderProfileContent() : renderAuthPrompt()}
+      <GroupSelectionModal
+        visible={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+      />
     </View>
   );
 }
@@ -267,5 +285,70 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: "#FF3B30",
+  },
+  groupSection: {
+    marginTop: 32,
+    width: "100%",
+    paddingHorizontal: 16,
+  },
+  groupSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  groupSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.background.secondary,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  groupInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  groupImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.background.tertiary,
+    marginRight: 12,
+  },
+  groupTextInfo: {
+    flex: 1,
+  },
+  groupName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+    marginBottom: 2,
+  },
+  groupHandle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  menuItemContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  menuSubtext: {
+    fontSize: 14,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  menuGroupImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.background.tertiary,
   },
 });

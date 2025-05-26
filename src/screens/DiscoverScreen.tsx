@@ -25,6 +25,7 @@ import {
 import EventCard from "../components/EventCard";
 import Button from "../components/Button";
 import { useAuth } from "../contexts/AuthContext";
+import { useGroup } from "../contexts/GroupContext";
 import { getEventStatus } from "../utils/dateUtils";
 import { colors } from "../utils/colors";
 import Constants from "expo-constants";
@@ -44,6 +45,7 @@ export default function DiscoverScreen() {
   const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
   const [eventFilter, setEventFilter] = useState<EventFilter>("upcoming");
   const { user, isDemoMode, demoStarredEvents, toggleDemoStar } = useAuth();
+  const { selectedGroupId, allGroups } = useGroup();
 
   console.log(
     "DEBUG DiscoverScreen: User in DiscoverScreen:",
@@ -56,13 +58,10 @@ export default function DiscoverScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["events", "group", 3579],
+    queryKey: ["events", "group", selectedGroupId],
     queryFn: async () => {
-      console.log(
-        "DiscoverScreen: Starting events query for Edge Esmeralda group",
-      );
-      const { query, variables } = getEventsForGroup(3579);
-      console.log("DiscoverScreen: Query variables", variables);
+      console.log(selectedGroupId);
+      const { query, variables } = getEventsForGroup(selectedGroupId);
 
       try {
         const result = await apolloClient.query({
@@ -70,7 +69,6 @@ export default function DiscoverScreen() {
           variables,
           fetchPolicy: "network-only",
         });
-        console.log("DiscoverScreen: Query success", result.data);
         return result.data.events as EventWithJoinStatus[];
       } catch (error) {
         console.error("DiscoverScreen: Query failed", error);
@@ -82,11 +80,8 @@ export default function DiscoverScreen() {
   // Filter events based on the selected filter
   const filteredEvents = useMemo(() => {
     if (!eventsData) {
-      console.log("DEBUG: No eventsData available for filtering");
       return [];
     }
-
-    console.log("DEBUG: Total events available:", eventsData.length);
 
     if (eventFilter === "upcoming") {
       const filtered = eventsData.filter((event) => {
@@ -105,12 +100,6 @@ export default function DiscoverScreen() {
   }, [eventsData, eventFilter]);
 
   useEffect(() => {
-    console.log("DiscoverScreen: State changed", {
-      isLoading,
-      hasData: !!eventsData,
-      dataLength: eventsData?.length,
-      hasError: !!error,
-    });
     if (error) {
       console.error("DiscoverScreen: React Query error", error);
     }
@@ -272,7 +261,7 @@ export default function DiscoverScreen() {
               Get access to RSVPs and event management
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
         </View>
       </TouchableOpacity>
     );
@@ -289,9 +278,13 @@ export default function DiscoverScreen() {
         ListHeaderComponent={
           <View>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>Edge Esmeralda Events</Text>
+              <Text style={styles.headerTitle}>
+                {allGroups.find(group => group.id === selectedGroupId)?.nickname || 
+                 allGroups.find(group => group.id === selectedGroupId)?.handle || 
+                 'Events'}
+              </Text>
               <Text style={styles.headerSubtitle}>
-                Discover events in the pop-up city
+                Discover events in this community
               </Text>
 
               {/* Event Filter Toggle */}
@@ -425,8 +418,8 @@ const styles = StyleSheet.create({
   },
   signInPrompt: {
     backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginHorizontal: 8,
+    marginBottom: 8,
     borderRadius: 12,
     elevation: 2,
     shadowColor: "#000",
