@@ -43,7 +43,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
   const [eventFilter, setEventFilter] = useState<EventFilter>("upcoming");
-  const { user } = useAuth();
+  const { user, isDemoMode, demoStarredEvents, toggleDemoStar } = useAuth();
 
   console.log(
     "DEBUG DiscoverScreen: User in DiscoverScreen:",
@@ -120,6 +120,12 @@ export default function DiscoverScreen() {
   const loadStarredEvents = useCallback(async () => {
     if (!user) return;
 
+    // Handle demo mode
+    if (isDemoMode) {
+      setStarredEvents(demoStarredEvents);
+      return;
+    }
+
     try {
       const authToken = await getAuthToken();
       if (!authToken) return;
@@ -136,7 +142,7 @@ export default function DiscoverScreen() {
     } catch (error) {
       console.warn("Failed to load starred events:", error);
     }
-  }, [user]);
+  }, [user, isDemoMode, demoStarredEvents]);
 
   // Load starred events when user is available
   useEffect(() => {
@@ -169,6 +175,13 @@ export default function DiscoverScreen() {
     }
 
     try {
+      // Handle demo mode
+      if (isDemoMode) {
+        toggleDemoStar(eventId);
+        await loadStarredEvents();
+        return;
+      }
+
       const authToken = await getAuthToken();
       if (!authToken) {
         throw new Error("No authentication token found");
@@ -234,7 +247,7 @@ export default function DiscoverScreen() {
   if (isLoading && !eventsData) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Loading events...</Text>
       </View>
     );

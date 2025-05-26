@@ -43,12 +43,19 @@ export default function EventDetailScreen() {
   const [isRSVPing, setIsRSVPing] = useState(false);
   const [isStarring, setIsStarring] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
-  const { user } = useAuth();
+  const { user, isDemoMode, demoStarredEvents, demoAttendingEvents, toggleDemoStar, toggleDemoAttendance } = useAuth();
 
   // Function to check if event is starred
   const checkIfEventIsStarred = useCallback(async () => {
     if (!user) {
       setIsStarred(false);
+      return;
+    }
+
+    // Handle demo mode
+    if (isDemoMode) {
+      const eventIdInt = parseInt(eventId.toString(), 10);
+      setIsStarred(demoStarredEvents.has(eventIdInt));
       return;
     }
 
@@ -76,7 +83,7 @@ export default function EventDetailScreen() {
       console.warn("Failed to check if event is starred:", error);
       setIsStarred(false);
     }
-  }, [user, eventId]);
+  }, [user, eventId, isDemoMode, demoStarredEvents]);
 
   const {
     data: event,
@@ -172,13 +179,22 @@ export default function EventDetailScreen() {
   );
 
   // Check if user is already attending this event
-  const isUserAttending =
-    user &&
-    event?.participants?.some(
+  const isUserAttending = (() => {
+    if (!user || !event) return false;
+    
+    // Handle demo mode
+    if (isDemoMode) {
+      const eventIdInt = parseInt(eventId.toString(), 10);
+      return demoAttendingEvents.has(eventIdInt);
+    }
+    
+    // Regular mode - check participants list
+    return event.participants?.some(
       (participant: any) =>
         participant.profile.id === user.id &&
         ["applied", "attending", "checked"].includes(participant.status),
     );
+  })();
 
   const handleRSVP = async () => {
     if (!user) {
@@ -196,12 +212,23 @@ export default function EventDetailScreen() {
     setIsRSVPing(true);
 
     try {
+      const eventIdInt = parseInt(eventId.toString(), 10);
+
+      // Handle demo mode
+      if (isDemoMode) {
+        toggleDemoAttendance(eventIdInt);
+        if (isUserAttending) {
+          Alert.alert("Canceled", "You have canceled your RSVP for this event.");
+        } else {
+          Alert.alert("Success", "Successfully RSVP'd to event!");
+        }
+        return;
+      }
+
       const authToken = await getAuthToken();
       if (!authToken) {
         throw new Error("No authentication token found");
       }
-
-      const eventIdInt = parseInt(eventId.toString(), 10);
 
       if (isUserAttending) {
         // Cancel attendance
@@ -262,12 +289,19 @@ export default function EventDetailScreen() {
     setIsStarring(true);
 
     try {
+      const eventIdInt = parseInt(eventId.toString(), 10);
+
+      // Handle demo mode
+      if (isDemoMode) {
+        toggleDemoStar(eventIdInt);
+        await checkIfEventIsStarred();
+        return;
+      }
+
       const authToken = await getAuthToken();
       if (!authToken) {
         throw new Error("No authentication token found");
       }
-
-      const eventIdInt = parseInt(eventId.toString(), 10);
 
       if (isStarred) {
         // Unstar event

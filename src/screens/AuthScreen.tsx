@@ -199,6 +199,14 @@ export default function AuthScreen() {
             autoCorrect={false}
           />
 
+          {email.trim().toLowerCase() === 'example@example.com' && (
+            <View style={styles.demoNotice}>
+              <Text style={styles.demoNoticeText}>
+                🎭 Demo Mode - Sign in without verification
+              </Text>
+            </View>
+          )}
+
           <Button
             title="Continue with Email"
             onPress={handleEmailSignIn}
@@ -322,5 +330,17 @@ const styles = StyleSheet.create({
   backButtonStyle: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  demoNotice: {
+    backgroundColor: colors.primary + '20',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  demoNoticeText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

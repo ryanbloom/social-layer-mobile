@@ -8,11 +8,16 @@ interface AuthContextType {
   user: Profile | null;
   loading: boolean;
   actionLoading: boolean;
+  isDemoMode: boolean;
+  demoStarredEvents: Set<number>;
+  demoAttendingEvents: Set<number>;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string) => Promise<void>;
   verifyPin: (email: string, pin: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  toggleDemoStar: (eventId: number) => void;
+  toggleDemoAttendance: (eventId: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +30,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true); // For initial auth check
   const [actionLoading, setActionLoading] = useState(false); // For sign-in actions
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoStarredEvents, setDemoStarredEvents] = useState<Set<number>>(new Set());
+  const [demoAttendingEvents, setDemoAttendingEvents] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     initializeAuth();
@@ -42,12 +50,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             handle: 'demo_user',
             nickname: 'Demo User',
             image_url: 'https://via.placeholder.com/120',
-            about: 'Demo user signed in via Google',
-            email: 'demo@gmail.com',
+            about: 'Demo user account',
+            email: 'example@example.com',
             verified: false,
             status: 'active'
           };
           setUser(demoProfile);
+          setIsDemoMode(true);
         } else {
           // Try to get real profile from API
           const profile = await getProfileByToken(token);
@@ -68,6 +77,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithEmail = async (email: string) => {
     console.log('DEBUG AuthContext: signInWithEmail called with:', email);
+    
+    // Check for demo account
+    if (email.trim().toLowerCase() === 'example@example.com') {
+      console.log('DEBUG AuthContext: Demo account detected, signing in directly');
+      try {
+        setActionLoading(true);
+        
+        // Create demo token and store it
+        const demoToken = 'demo_auth_token_' + Date.now();
+        await storeAuthToken(demoToken);
+        
+        // Create demo user profile
+        const demoProfile = {
+          id: 1,
+          handle: 'demo_user',
+          nickname: 'Demo User',
+          image_url: 'https://via.placeholder.com/120',
+          about: 'Demo user account',
+          email: 'example@example.com',
+          verified: false,
+          status: 'active'
+        };
+        
+        setUser(demoProfile);
+        setIsDemoMode(true);
+        return;
+      } catch (error) {
+        console.error('DEBUG AuthContext: Demo sign-in error:', error);
+        throw error;
+      } finally {
+        setActionLoading(false);
+      }
+    }
+    
+    // Regular email sign-in flow
     try {
       console.log('DEBUG AuthContext: Setting actionLoading to true');
       setActionLoading(true);
@@ -152,6 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       setUser(demoProfile);
+      setIsDemoMode(true);
       
       // TODO: Replace with actual Google OAuth flow using AuthSession:
       // const clientId = 'YOUR_GOOGLE_CLIENT_ID';
@@ -194,6 +239,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setActionLoading(true);
       await removeAuthToken();
       setUser(null);
+      setIsDemoMode(false);
+      setDemoStarredEvents(new Set());
+      setDemoAttendingEvents(new Set());
     } catch (error) {
       console.error('Sign-out error:', error);
     } finally {
@@ -213,15 +261,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const toggleDemoStar = (eventId: number) => {
+    if (!isDemoMode) return;
+    
+    setDemoStarredEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleDemoAttendance = (eventId: number) => {
+    if (!isDemoMode) return;
+    
+    setDemoAttendingEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
   const value: AuthContextType = {
     user,
     loading,
     actionLoading,
+    isDemoMode,
+    demoStarredEvents,
+    demoAttendingEvents,
     signInWithGoogle,
     signInWithEmail,
     verifyPin,
     signOut,
     refreshProfile,
+    toggleDemoStar,
+    toggleDemoAttendance,
   };
 
   return (

@@ -36,7 +36,8 @@ const authLink = setContext(async (_, { headers }) => {
   console.log("Apollo: Setting auth header", token ? "Token present" : "No token");
   
   const authHeaders: Record<string, string> = { ...headers };
-  if (token) {
+  if (token && !token.startsWith('demo_auth_token_')) {
+    // Only set authorization header for real tokens, not demo tokens
     authHeaders.authorization = `Bearer ${token}`;
   }
   
@@ -77,6 +78,21 @@ export const getProfileByToken = async (
   if (!auth_token) {
     console.log("getProfileByToken: No auth token provided");
     return null;
+  }
+
+  // Handle demo tokens
+  if (auth_token.startsWith('demo_auth_token_')) {
+    console.log("getProfileByToken: Demo token detected, returning demo profile");
+    return {
+      id: 1,
+      handle: 'demo_user',
+      nickname: 'Demo User',
+      image_url: 'https://via.placeholder.com/120',
+      about: 'Demo user account',
+      email: 'example@example.com',
+      verified: false,
+      status: 'active'
+    };
   }
 
   const url = `${API_URL}/profile/me?auth_token=${auth_token}`;
@@ -498,6 +514,14 @@ export const attendEvent = async (
   eventId: number,
   authToken: string,
 ): Promise<void> => {
+  // Check if this is a demo token
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log("attendEvent: Demo mode - simulating successful RSVP", eventId);
+    // Simulate a small delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return;
+  }
+
   const url = `${API_URL}/event/join`;
   console.log("attendEvent: Joining event", eventId);
 
@@ -542,6 +566,14 @@ export const cancelAttendance = async (
   eventId: number,
   authToken: string,
 ): Promise<void> => {
+  // Check if this is a demo token
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log("cancelAttendance: Demo mode - simulating successful cancellation", eventId);
+    // Simulate a small delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return;
+  }
+
   const url = `${API_URL}/event/cancel`;
   console.log("cancelAttendance: Canceling attendance for event", eventId);
 
@@ -589,6 +621,16 @@ export const getMyEvents = async (
   const profile = await getProfileByToken(authToken);
   if (!profile) {
     throw new Error("Unable to get user profile");
+  }
+
+  // Handle demo mode - return empty events for the correct group only
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log("getMyEvents: Demo mode - returning empty events lists");
+    return {
+      attending: [],
+      hosting: [],
+      starred: [],
+    };
   }
 
   try {
@@ -737,6 +779,14 @@ export const starEvent = async (
   eventId: number,
   authToken: string,
 ): Promise<void> => {
+  // Check if this is a demo token
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log("starEvent: Demo mode - simulating successful star", eventId);
+    // Simulate a small delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return;
+  }
+
   const url = `${API_URL}/comment/star`;
   console.log("starEvent: Starring event", eventId);
 
@@ -782,6 +832,14 @@ export const unstarEvent = async (
   eventId: number,
   authToken: string,
 ): Promise<void> => {
+  // Check if this is a demo token
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log("unstarEvent: Demo mode - simulating successful unstar", eventId);
+    // Simulate a small delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return;
+  }
+
   const url = `${API_URL}/comment/unstar`;
   console.log("unstarEvent: Unstarring event", eventId);
 

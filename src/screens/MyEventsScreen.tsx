@@ -17,6 +17,8 @@ import {
   getAuthToken,
   starEvent,
   unstarEvent,
+  apolloClient,
+  getEventsForGroup,
 } from "../services/api";
 import Button from "../components/Button";
 import EventCard from "../components/EventCard";
@@ -28,15 +30,27 @@ type EventTab = "hosting" | "attending" | "starred";
 export default function MyEventsScreen() {
   const [activeTab, setActiveTab] = useState<EventTab>("attending");
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, isDemoMode, demoStarredEvents, demoAttendingEvents, toggleDemoStar } = useAuth();
 
   const handleStarPress = async (eventId: number) => {
-    if (!user || !myEvents) {
+    if (!user) {
       Alert.alert("Error", "Unable to update star status.");
       return;
     }
 
     try {
+      // Handle demo mode
+      if (isDemoMode) {
+        toggleDemoStar(eventId);
+        await refetch();
+        return;
+      }
+
+      if (!myEvents) {
+        Alert.alert("Error", "Unable to update star status.");
+        return;
+      }
+
       const authToken = await getAuthToken();
       if (!authToken) {
         throw new Error("No authentication token found");
@@ -67,12 +81,40 @@ export default function MyEventsScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["myEvents", user?.id],
+    queryKey: ["myEvents", user?.id, isDemoMode, Array.from(demoStarredEvents).sort(), Array.from(demoAttendingEvents).sort()],
     queryFn: async () => {
       const authToken = await getAuthToken();
       if (!authToken) {
         throw new Error("No authentication token found");
       }
+
+      // Handle demo mode - get group events and filter them
+      if (isDemoMode) {
+        const { query, variables } = getEventsForGroup(3579); // Edge Esmeralda group
+        const result = await apolloClient.query({
+          query,
+          variables,
+          fetchPolicy: "network-only",
+        });
+        
+        const allGroupEvents = result.data.events || [];
+        
+        // Filter events based on demo state
+        const attendingEvents = allGroupEvents.filter((event: Event) => 
+          demoAttendingEvents.has(event.id)
+        );
+        
+        const starredEvents = allGroupEvents.filter((event: Event) => 
+          demoStarredEvents.has(event.id)
+        );
+
+        return {
+          attending: attendingEvents,
+          hosting: [],
+          starred: starredEvents,
+        };
+      }
+
       return getMyEvents(authToken);
     },
     enabled: !!user, // Only run query when user is authenticated
