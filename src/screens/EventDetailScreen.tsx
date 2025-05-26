@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -49,7 +50,7 @@ interface HostAvatarProps {
 
 function HostAvatar({ imageUrl, hostName }: HostAvatarProps) {
   const [imageError, setImageError] = useState(false);
-  
+
   if (imageError) {
     return (
       <View style={[styles.hostAvatar, styles.hostAvatarPlaceholder]}>
@@ -57,7 +58,7 @@ function HostAvatar({ imageUrl, hostName }: HostAvatarProps) {
       </View>
     );
   }
-  
+
   return (
     <Image
       source={{ uri: imageUrl }}
@@ -315,6 +316,57 @@ export default function EventDetailScreen() {
     }
   };
 
+  const handleLocationPress = async (event: any) => {
+    if (event.meeting_url) return;
+
+    try {
+      let url = '';
+
+      if (event.formatted_address) {
+        // Prefer formatted address for better accuracy in maps
+        const encodedAddress = encodeURIComponent(event.formatted_address);
+
+        const ios_url = `maps:?q=${encodedAddress}`;
+        const canOpenMaps = await Linking.canOpenURL(ios_url);
+        if (canOpenMaps) {
+          url = ios_url;
+        } else {
+          url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+        }
+      } else if (event.geo_lat && event.geo_lng) {
+        // Use coordinates as fallback if no formatted address
+        const lat = parseFloat(event.geo_lat);
+        const lng = parseFloat(event.geo_lng);
+
+        const ios_url = `maps:?q=${lat},${lng}`;
+        const canOpenMaps = await Linking.canOpenURL(ios_url);
+        if (canOpenMaps) {
+          url = ios_url;
+        } else {
+          url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        }
+      } else if (event.location) {
+        // Fallback to location description
+        const encodedLocation = encodeURIComponent(event.location);
+
+        const ios_url = `maps:?q=${encodedLocation}`;
+        const canOpenMaps = await Linking.canOpenURL(ios_url);
+        if (canOpenMaps) {
+          url = ios_url;
+        } else {
+          url = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+        }
+      }
+
+      if (url) {
+        await Linking.openURL(url);
+      }
+    } catch (error) {
+      console.error('Error opening map:', error);
+      Alert.alert('Error', 'Unable to open map application');
+    }
+  };
+
   const handleStarToggle = async () => {
     if (!user) {
       Alert.alert('Sign In Required', 'Please sign in to star events.', [
@@ -458,7 +510,7 @@ export default function EventDetailScreen() {
                 <Ionicons
                   name={isStarred ? 'star' : 'star-outline'}
                   size={24}
-                  color={isStarred ? colors.accent : colors.text.secondary}
+                  color={isStarred ? colors.star : colors.text.secondary}
                 />
               )}
             </TouchableOpacity>
@@ -501,41 +553,66 @@ export default function EventDetailScreen() {
         {/* Host Info */}
         <View style={styles.hostSection}>
           {(() => {
-            const customHost = event.event_roles?.find((r) => r.role === 'custom_host');
-            const groupHost = event.event_roles?.find((r) => r.role === 'group_host');
-            const cohosts = event.event_roles?.filter((r) => r.role === 'co_host') || [];
-            
+            const customHost = event.event_roles?.find(
+              (r) => r.role === 'custom_host'
+            );
+            const groupHost = event.event_roles?.find(
+              (r) => r.role === 'group_host'
+            );
+            const cohosts =
+              event.event_roles?.filter((r) => r.role === 'co_host') || [];
+
             const hosts = [];
-            
+
             // Add primary host
             if (customHost) {
-              hosts.push({ ...customHost, isPrimary: true, label: 'Custom Host' });
+              hosts.push({
+                ...customHost,
+                isPrimary: true,
+                label: 'Custom Host',
+              });
             } else if (groupHost) {
-              hosts.push({ ...groupHost, isPrimary: true, label: 'Group Host' });
+              hosts.push({
+                ...groupHost,
+                isPrimary: true,
+                label: 'Group Host',
+              });
             } else {
-              hosts.push({ 
+              hosts.push({
                 nickname: event.owner.nickname || event.owner.handle,
                 image_url: event.owner.image_url,
                 isPrimary: true,
-                label: 'Event Host'
+                label: 'Event Host',
               });
             }
-            
+
             // Add co-hosts
-            cohosts.forEach(cohost => {
+            cohosts.forEach((cohost) => {
               hosts.push({ ...cohost, isPrimary: false, label: 'Co-Host' });
             });
-            
+
             return hosts.map((host, index) => (
-              <View key={index} style={[styles.hostContainer, index === hosts.length - 1 && styles.lastHostContainer]}>
+              <View
+                key={index}
+                style={[
+                  styles.hostContainer,
+                  index === hosts.length - 1 && styles.lastHostContainer,
+                ]}
+              >
                 {host.image_url ? (
-                  <HostAvatar 
-                    imageUrl={host.image_url} 
-                    hostName={host.nickname} 
+                  <HostAvatar
+                    imageUrl={host.image_url}
+                    hostName={host.nickname}
                   />
                 ) : (
-                  <View style={[styles.hostAvatar, styles.hostAvatarPlaceholder]}>
-                    <Ionicons name="person" size={24} color={colors.text.tertiary} />
+                  <View
+                    style={[styles.hostAvatar, styles.hostAvatarPlaceholder]}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={24}
+                      color={colors.text.tertiary}
+                    />
                   </View>
                 )}
                 <View style={styles.hostInfo}>
@@ -561,7 +638,11 @@ export default function EventDetailScreen() {
         {/* Location */}
         {(event.location || event.meeting_url) && (
           <View style={styles.infoSection}>
-            <View style={styles.infoItem}>
+            <TouchableOpacity
+              style={styles.infoItem}
+              onPress={() => handleLocationPress(event)}
+              disabled={!!event.meeting_url}
+            >
               <Ionicons
                 name={event.meeting_url ? 'videocam' : 'location'}
                 size={24}
@@ -574,8 +655,13 @@ export default function EventDetailScreen() {
                 <Text style={styles.infoValue}>
                   {event.location || 'Online'}
                 </Text>
+                {event.formatted_address && !event.meeting_url && (
+                  <Text style={styles.infoAddress}>
+                    {event.formatted_address}
+                  </Text>
+                )}
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -785,6 +871,18 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     lineHeight: 22,
   },
+  infoAddress: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  locationTap: {
+    fontSize: 12,
+    color: colors.primary,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
   descriptionSection: {
     marginBottom: 24,
   },
@@ -832,5 +930,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.tertiary,
     textAlign: 'center',
+  },
+  actionButtonsNoCover: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 16,
+  },
+  actionButtonNoCover: {
+    padding: 8,
+    marginLeft: 8,
   },
 });
