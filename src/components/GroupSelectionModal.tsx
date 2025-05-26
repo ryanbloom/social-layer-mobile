@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Group } from "../types";
-import { getAllGroups, getUserGroups, getAuthToken } from "../services/api";
-import { useGroup } from "../contexts/GroupContext";
-import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../utils/colors";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Group } from '../types';
+import { getAllGroups, getUserGroups, getAuthToken } from '../services/api';
+import { useGroup } from '../contexts/GroupContext';
+import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../utils/colors';
 
 interface GroupSelectionModalProps {
   visible: boolean;
@@ -65,8 +65,8 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
         }
       }
     } catch (error) {
-      console.error("Failed to load groups:", error);
-      Alert.alert("Error", "Failed to load groups. Please try again.");
+      console.error('Failed to load groups:', error);
+      Alert.alert('Error', 'Failed to load groups. Please try again.');
     } finally {
       setLocalLoading(false);
       setIsLoading(false);
@@ -78,7 +78,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
       await setSelectedGroupId(groupId);
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to select group. Please try again.");
+      Alert.alert('Error', 'Failed to select group. Please try again.');
     }
   };
 
@@ -100,7 +100,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
           <Image
             source={{
               uri: item.image_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.groupImage}
             resizeMode="cover"
@@ -186,7 +186,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
     // Filter out user groups from all groups to avoid duplicates
     const otherGroups = user
       ? allGroups.filter(
-          (group) => !userGroups.some((userGroup) => userGroup.id === group.id),
+          (group) => !userGroups.some((userGroup) => userGroup.id === group.id)
         )
       : allGroups;
 
@@ -245,9 +245,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.secondary,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
   },
   closeButton: {
@@ -269,8 +269,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 16,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 12,
     marginHorizontal: 16,
@@ -294,9 +294,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 12,
     padding: 16,
-    position: "relative",
+    position: 'relative',
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   groupContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   groupImage: {
     width: 48,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 2,
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   groupStats: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 16,
   },
   statText: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   userGroupBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     right: 8,
     backgroundColor: colors.status.success,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   userGroupBadgeText: {
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.background.primary,
   },
 });

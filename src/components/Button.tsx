@@ -1,5 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  View,
+} from 'react-native';
 import { colors } from '../utils/colors';
 
 interface ButtonProps {
@@ -26,7 +34,11 @@ export default function Button({
   icon,
 }: ButtonProps) {
   const getButtonStyle = () => {
-    const baseStyle = [styles.button, styles[`${variant}Button`], styles[`${size}Button`]];
+    const baseStyle = [
+      styles.button,
+      styles[`${variant}Button`],
+      styles[`${size}Button`],
+    ];
     if (disabled || loading) {
       baseStyle.push(styles.disabledButton);
     }
@@ -34,7 +46,11 @@ export default function Button({
   };
 
   const getTextStyle = () => {
-    const baseStyle = [styles.text, styles[`${variant}Text`], styles[`${size}Text`]];
+    const baseStyle = [
+      styles.text,
+      styles[`${variant}Text`],
+      styles[`${size}Text`],
+    ];
     if (disabled || loading) {
       baseStyle.push(styles.disabledText);
     }
@@ -49,7 +65,9 @@ export default function Button({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.text.white : colors.primary} />
+        <ActivityIndicator
+          color={variant === 'primary' ? colors.text.white : colors.primary}
+        />
       ) : (
         <View style={styles.content}>
           {icon && <View style={styles.icon}>{icon}</View>}
@@ -78,7 +96,7 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: 8,
   },
-  
+
   // Variants
   primaryButton: {
     backgroundColor: colors.primary,
@@ -86,14 +104,14 @@ const styles = StyleSheet.create({
   primaryText: {
     color: colors.text.white,
   },
-  
+
   secondaryButton: {
     backgroundColor: colors.background.tertiary,
   },
   secondaryText: {
     color: colors.text.primary,
   },
-  
+
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -102,14 +120,14 @@ const styles = StyleSheet.create({
   outlineText: {
     color: colors.primary,
   },
-  
+
   ghostButton: {
     backgroundColor: 'transparent',
   },
   ghostText: {
     color: colors.primary,
   },
-  
+
   // Sizes
   smallButton: {
     paddingHorizontal: 12,
@@ -119,7 +137,7 @@ const styles = StyleSheet.create({
   smallText: {
     fontSize: 14,
   },
-  
+
   mediumButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -128,7 +146,7 @@ const styles = StyleSheet.create({
   mediumText: {
     fontSize: 16,
   },
-  
+
   largeButton: {
     paddingHorizontal: 20,
     paddingVertical: 14,
@@ -137,7 +155,7 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: 18,
   },
-  
+
   // Disabled state
   disabledButton: {
     opacity: colors.disabled,

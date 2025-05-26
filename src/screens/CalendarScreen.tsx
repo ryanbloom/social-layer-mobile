@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
-import { EventWithJoinStatus, RootStackParamList } from "../types";
+import { EventWithJoinStatus, RootStackParamList } from '../types';
 import {
   apolloClient,
   getEventsForGroup,
@@ -21,19 +21,19 @@ import {
   starEvent,
   unstarEvent,
   getAuthToken,
-} from "../services/api";
-import Constants from "expo-constants";
+} from '../services/api';
+import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
-import EventCard from "../components/EventCard";
-import { formatEventTime } from "../utils/dateUtils";
-import { colors } from "../utils/colors";
-import { useAuth } from "../contexts/AuthContext";
-import { useGroup } from "../contexts/GroupContext";
+import EventCard from '../components/EventCard';
+import { formatEventTime } from '../utils/dateUtils';
+import { colors } from '../utils/colors';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 
 type CalendarScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  "Main"
+  'Main'
 >;
 
 export default function CalendarScreen() {
@@ -46,11 +46,11 @@ export default function CalendarScreen() {
 
   // Update navigation title when selected date changes
   useEffect(() => {
-    const dateString = selectedDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+    const dateString = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
     });
     navigation.setOptions({
       headerTitle: dateString,
@@ -70,12 +70,12 @@ export default function CalendarScreen() {
       if (response.ok) {
         const data = await response.json();
         const starredEventIds = new Set(
-          (data.events || []).map((event: any) => event.id),
+          (data.events || []).map((event: any) => event.id)
         );
         setStarredEvents(starredEventIds);
       }
     } catch (error) {
-      console.warn("Failed to load starred events:", error);
+      console.warn('Failed to load starred events:', error);
     }
   }, [user]);
 
@@ -90,7 +90,7 @@ export default function CalendarScreen() {
       if (user) {
         loadStarredEvents();
       }
-    }, [user, loadStarredEvents]),
+    }, [user, loadStarredEvents])
   );
 
   // Load events
@@ -99,13 +99,13 @@ export default function CalendarScreen() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["events", "group", selectedGroupId],
+    queryKey: ['events', 'group', selectedGroupId],
     queryFn: async () => {
       const { query, variables } = getEventsForGroup(selectedGroupId);
       const result = await apolloClient.query({
         query,
         variables,
-        fetchPolicy: "network-only",
+        fetchPolicy: 'network-only',
       });
       return result.data.events as EventWithJoinStatus[];
     },
@@ -120,21 +120,21 @@ export default function CalendarScreen() {
       const { date: eventDate } = formatEventTime(
         event.start_time,
         event.timezone,
-        LOCAL_TIMEZONE,
+        LOCAL_TIMEZONE
       );
       const eventDateObj = new Date(event.start_time);
       // Use timezone-corrected date for comparison
       const correctedEventDate = new Date(
-        eventDateObj.getTime() - 7 * 60 * 60 * 1000,
+        eventDateObj.getTime() - 7 * 60 * 60 * 1000
       );
       return correctedEventDate.toDateString() === dateStr;
     });
   };
 
   const renderCalendarHeader = () => {
-    const monthYear = currentMonth.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
+    const monthYear = currentMonth.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
     });
 
     return (
@@ -167,7 +167,7 @@ export default function CalendarScreen() {
   };
 
   const renderWeekDays = () => {
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
       <View style={styles.weekDaysContainer}>
@@ -224,7 +224,7 @@ export default function CalendarScreen() {
               {currentDate.getDate()}
             </Text>
             {hasEvents && <View style={styles.eventIndicator} />}
-          </TouchableOpacity>,
+          </TouchableOpacity>
         );
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -233,7 +233,7 @@ export default function CalendarScreen() {
       days.push(
         <View key={week} style={styles.weekRow}>
           {weekDays}
-        </View>,
+        </View>
       );
     }
 
@@ -241,36 +241,36 @@ export default function CalendarScreen() {
   };
 
   const renderSelectedDateEvents = () => {
-    const dateString = selectedDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+    const dateString = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
     });
 
     const selectedDateEvents = getEventsForDate(selectedDate);
 
     const handleEventPress = (eventId: number) => {
-      navigation.navigate("EventDetail", { eventId });
+      navigation.navigate('EventDetail', { eventId });
     };
 
     const handleStarPress = async (eventId: number) => {
       if (!user) {
-        Alert.alert("Sign In Required", "Please sign in to star events.");
+        Alert.alert('Sign In Required', 'Please sign in to star events.');
         return;
       }
 
       try {
         const authToken = await getAuthToken();
         if (!authToken) {
-          throw new Error("No authentication token found");
+          throw new Error('No authentication token found');
         }
 
         const isCurrentlyStarred = starredEvents.has(eventId);
 
         if (isCurrentlyStarred) {
           await unstarEvent(eventId, authToken);
-          Alert.alert("Unstarred", "Event removed from your starred list.");
+          Alert.alert('Unstarred', 'Event removed from your starred list.');
         } else {
           await starEvent(eventId, authToken);
         }
@@ -278,10 +278,10 @@ export default function CalendarScreen() {
         // Reload starred events from server to ensure consistency
         await loadStarredEvents();
       } catch (error: any) {
-        console.error("Star/unstar error:", error);
+        console.error('Star/unstar error:', error);
         const message =
-          error?.message || "Failed to update star status. Please try again.";
-        Alert.alert("Error", message);
+          error?.message || 'Failed to update star status. Please try again.';
+        Alert.alert('Error', message);
       }
     };
 
@@ -349,15 +349,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   calendarHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
   navButton: {
@@ -365,34 +365,34 @@ const styles = StyleSheet.create({
   },
   monthYear: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
   },
   weekDaysContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 8,
   },
   weekDayItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 8,
   },
   weekDayText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.secondary,
   },
   calendarDays: {
     marginBottom: 8,
   },
   weekRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
   },
   dayItem: {
     flex: 1,
     aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 8,
     margin: 1,
   },
@@ -413,20 +413,20 @@ const styles = StyleSheet.create({
   },
   selectedDayText: {
     color: colors.text.white,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   todayDayText: {
     color: colors.primary,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   noEventsContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 32,
     marginHorizontal: 16,
   },
   noEventsText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.secondary,
     marginTop: 16,
     marginBottom: 4,
@@ -434,19 +434,19 @@ const styles = StyleSheet.create({
   noEventsSubtext: {
     fontSize: 14,
     color: colors.text.tertiary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   eventIndicator: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 4,
-    alignSelf: "center",
+    alignSelf: 'center',
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.primary,
   },
   loadingContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 32,
     marginHorizontal: 16,
   },

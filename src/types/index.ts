@@ -32,7 +32,10 @@ export interface Profile {
   social_links: SocialMedia;
 }
 
-export type ProfileSample = Pick<Profile, 'id' | 'handle' | 'nickname' | 'image_url'>;
+export type ProfileSample = Pick<
+  Profile,
+  'id' | 'handle' | 'nickname' | 'image_url'
+>;
 
 export interface Event {
   id: number;
@@ -139,7 +142,7 @@ export enum EventRoleType {
   Speaker = 'speaker',
   CoHost = 'co_host',
   GroupHost = 'group_host',
-  CustomHost = 'custom_host'
+  CustomHost = 'custom_host',
 }
 
 export interface EventRole {
@@ -191,7 +194,10 @@ export interface Membership {
   profile: ProfileSample;
 }
 
-export type GroupSample = Pick<Group, 'id' | 'handle' | 'nickname' | 'image_url'>;
+export type GroupSample = Pick<
+  Group,
+  'id' | 'handle' | 'nickname' | 'image_url'
+>;
 
 export interface BadgeClass {
   id: number;

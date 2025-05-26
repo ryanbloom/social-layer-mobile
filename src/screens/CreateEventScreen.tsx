@@ -38,8 +38,7 @@ export default function CreateEventScreen() {
         <Ionicons name="add-circle-outline" size={64} color="#ccc" />
         <Text style={styles.title}>Create Event</Text>
         <Text style={styles.description}>
-          This feature will allow you to create and manage events.
-          Coming soon!
+          This feature will allow you to create and manage events. Coming soon!
         </Text>
       </View>
     </View>

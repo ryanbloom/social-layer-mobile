@@ -1,17 +1,17 @@
 export function getEventStatus(
   startTime: string,
-  endTime: string,
-): "past" | "ongoing" | "upcoming" {
+  endTime: string
+): 'past' | 'ongoing' | 'upcoming' {
   const now = new Date();
   const start = new Date(startTime);
   const end = new Date(endTime);
 
   if (now > end) {
-    return "past";
+    return 'past';
   } else if (now >= start && now <= end) {
-    return "ongoing";
+    return 'ongoing';
   } else {
-    return "upcoming";
+    return 'upcoming';
   }
 }
 
@@ -24,20 +24,20 @@ function correctTime(date: Date, correctionHours: number = -7): Date {
 export function formatEventTime(
   startTime: string,
   timezone: string,
-  localTimezone: string = "America/Los_Angeles",
+  localTimezone: string = 'America/Los_Angeles'
 ): { date: string; time: string } {
   const start = correctTime(new Date(startTime));
 
   // Don't use timeZone parameter since we already corrected the time manually
-  const date = start.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  const date = start.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 
-  const time = start.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  const time = start.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
     hour12: true,
   });
 
@@ -48,30 +48,30 @@ export function formatEventDuration(
   startTime: string,
   endTime: string,
   timezone: string,
-  localTimezone: string = "America/Los_Angeles",
+  localTimezone: string = 'America/Los_Angeles'
 ): string {
   const start = correctTime(new Date(startTime));
   const end = correctTime(new Date(endTime));
 
-  const startDate = start.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
+  const startDate = start.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
   });
 
-  const endDate = end.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
+  const endDate = end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
   });
 
-  const startTime12 = start.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  const startTime12 = start.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
     hour12: true,
   });
 
-  const endTime12 = end.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  const endTime12 = end.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
     hour12: true,
   });
 
@@ -84,15 +84,15 @@ export function formatEventDuration(
 
 export function isToday(
   date: string,
-  localTimezone: string = "America/Los_Angeles",
+  localTimezone: string = 'America/Los_Angeles'
 ): boolean {
   const today = new Date();
   const eventDate = new Date(date);
 
-  const todayStr = today.toLocaleDateString("en-US", {
+  const todayStr = today.toLocaleDateString('en-US', {
     timeZone: localTimezone,
   });
-  const eventStr = eventDate.toLocaleDateString("en-US", {
+  const eventStr = eventDate.toLocaleDateString('en-US', {
     timeZone: localTimezone,
   });
 
@@ -101,16 +101,16 @@ export function isToday(
 
 export function isTomorrow(
   date: string,
-  localTimezone: string = "America/Los_Angeles",
+  localTimezone: string = 'America/Los_Angeles'
 ): boolean {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const eventDate = new Date(date);
 
-  const tomorrowStr = tomorrow.toLocaleDateString("en-US", {
+  const tomorrowStr = tomorrow.toLocaleDateString('en-US', {
     timeZone: localTimezone,
   });
-  const eventStr = eventDate.toLocaleDateString("en-US", {
+  const eventStr = eventDate.toLocaleDateString('en-US', {
     timeZone: localTimezone,
   });
 
@@ -119,17 +119,17 @@ export function isTomorrow(
 
 export function getRelativeDate(
   date: string,
-  localTimezone: string = "America/Los_Angeles",
+  localTimezone: string = 'America/Los_Angeles'
 ): string {
   if (isToday(date, localTimezone)) {
-    return "Today";
+    return 'Today';
   } else if (isTomorrow(date, localTimezone)) {
-    return "Tomorrow";
+    return 'Tomorrow';
   } else {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
       timeZone: localTimezone,
     });
   }

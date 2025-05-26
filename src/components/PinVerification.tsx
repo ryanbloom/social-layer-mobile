@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import Button from "./Button";
-import { colors } from "../utils/colors";
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Button from './Button';
+import { colors } from '../utils/colors';
 
 interface PinVerificationProps {
   email: string;
@@ -19,7 +19,7 @@ export default function PinVerification({
   onCancel,
   loading = false,
 }: PinVerificationProps) {
-  const [pin, setPin] = useState("");
+  const [pin, setPin] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRef = useRef<TextInput | null>(null);
 
@@ -27,7 +27,7 @@ export default function PinVerification({
     if (resendCooldown > 0) {
       const timer = setTimeout(
         () => setResendCooldown(resendCooldown - 1),
-        1000,
+        1000
       );
       return () => clearTimeout(timer);
     }
@@ -35,7 +35,7 @@ export default function PinVerification({
 
   const handlePinChange = (value: string) => {
     // Remove any non-digit characters and limit to 5 digits
-    const cleanValue = value.replace(/\D/g, "").slice(0, 5);
+    const cleanValue = value.replace(/\D/g, '').slice(0, 5);
     setPin(cleanValue);
 
     // Auto submit when all 5 digits entered
@@ -47,7 +47,7 @@ export default function PinVerification({
   const handleVerify = async (pinValue?: string) => {
     const fullPin = pinValue || pin;
     if (fullPin.length !== 5) {
-      Alert.alert("Invalid PIN", "Please enter all 5 digits");
+      Alert.alert('Invalid PIN', 'Please enter all 5 digits');
       return;
     }
 
@@ -55,7 +55,7 @@ export default function PinVerification({
       await onVerify(fullPin);
     } catch (error) {
       // Clear PIN on error
-      setPin("");
+      setPin('');
       inputRef.current?.focus();
     }
   };
@@ -67,11 +67,11 @@ export default function PinVerification({
       await onResend();
       setResendCooldown(30); // 30 second cooldown
       Alert.alert(
-        "PIN Sent",
-        "A new verification code has been sent to your email",
+        'PIN Sent',
+        'A new verification code has been sent to your email'
       );
     } catch (error) {
-      Alert.alert("Error", "Failed to resend PIN. Please try again.");
+      Alert.alert('Error', 'Failed to resend PIN. Please try again.');
     }
   };
 
@@ -81,7 +81,7 @@ export default function PinVerification({
         <Ionicons name="mail-outline" size={60} color={colors.primary} />
         <Text style={styles.title}>Check your email</Text>
         <Text style={styles.subtitle}>
-          We sent a verification code to{"\n"}
+          We sent a verification code to{'\n'}
           <Text style={styles.email}>{email}</Text>
         </Text>
       </View>
@@ -111,7 +111,7 @@ export default function PinVerification({
 
         <Button
           title={
-            resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"
+            resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'
           }
           onPress={handleResend}
           variant="ghost"
@@ -140,52 +140,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 32,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   header: {
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: 60,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginTop: 20,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+    color: '#666',
+    textAlign: 'center',
     lineHeight: 22,
   },
   email: {
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.primary,
   },
   pinContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pinLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 20,
   },
   pinInput: {
-    width: "100%",
+    width: '100%',
     maxWidth: 300,
     height: 56,
     borderWidth: 2,
-    borderColor: "#e0e0e0",
+    borderColor: '#e0e0e0',
     borderRadius: 12,
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    backgroundColor: "#fff",
+    fontWeight: 'bold',
+    color: '#333',
+    backgroundColor: '#fff',
     letterSpacing: 8,
   },
   actions: {
@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
   },
   helpText: {
     fontSize: 14,
-    color: "#666",
-    textAlign: "center",
+    color: '#666',
+    textAlign: 'center',
     lineHeight: 20,
   },
 });

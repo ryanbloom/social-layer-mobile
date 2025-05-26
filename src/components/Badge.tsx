@@ -4,12 +4,26 @@ import { colors } from '../utils/colors';
 
 interface BadgeProps {
   text: string;
-  variant?: 'default' | 'past' | 'private' | 'pending' | 'cancel' | 'ongoing' | 'upcoming' | 'hosting' | 'joining';
+  variant?:
+    | 'default'
+    | 'past'
+    | 'private'
+    | 'pending'
+    | 'cancel'
+    | 'ongoing'
+    | 'upcoming'
+    | 'hosting'
+    | 'joining';
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
-export default function Badge({ text, variant = 'default', style, textStyle }: BadgeProps) {
+export default function Badge({
+  text,
+  variant = 'default',
+  style,
+  textStyle,
+}: BadgeProps) {
   return (
     <View style={[styles.badge, styles[`${variant}Badge`], style]}>
       <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>
@@ -31,7 +45,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  
+
   // Default
   defaultBadge: {
     backgroundColor: colors.background.tertiary,
@@ -39,7 +53,7 @@ const styles = StyleSheet.create({
   defaultText: {
     color: colors.text.primary,
   },
-  
+
   // Past
   pastBadge: {
     backgroundColor: colors.background.primary,
@@ -47,7 +61,7 @@ const styles = StyleSheet.create({
   pastText: {
     color: colors.text.secondary,
   },
-  
+
   // Private
   privateBadge: {
     backgroundColor: colors.status.warningBg,
@@ -55,7 +69,7 @@ const styles = StyleSheet.create({
   privateText: {
     color: colors.status.warning,
   },
-  
+
   // Pending
   pendingBadge: {
     backgroundColor: colors.status.warningBg,
@@ -63,7 +77,7 @@ const styles = StyleSheet.create({
   pendingText: {
     color: colors.status.warning,
   },
-  
+
   // Cancel
   cancelBadge: {
     backgroundColor: colors.status.errorBg,
@@ -71,7 +85,7 @@ const styles = StyleSheet.create({
   cancelText: {
     color: colors.status.error,
   },
-  
+
   // Ongoing
   ongoingBadge: {
     backgroundColor: colors.status.infoBg,
@@ -79,7 +93,7 @@ const styles = StyleSheet.create({
   ongoingText: {
     color: colors.status.info,
   },
-  
+
   // Upcoming
   upcomingBadge: {
     backgroundColor: colors.status.successBg,
@@ -87,7 +101,7 @@ const styles = StyleSheet.create({
   upcomingText: {
     color: colors.status.success,
   },
-  
+
   // Hosting
   hostingBadge: {
     backgroundColor: colors.primaryLight,
@@ -95,7 +109,7 @@ const styles = StyleSheet.create({
   hostingText: {
     color: colors.primaryDark,
   },
-  
+
   // Joining
   joiningBadge: {
     backgroundColor: colors.primaryLight,

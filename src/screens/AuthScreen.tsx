@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,16 @@ import {
   Platform,
   Alert,
   TouchableOpacity,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import Button from "../components/Button";
-import PinVerification from "../components/PinVerification";
-import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../utils/colors";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import Button from '../components/Button';
+import PinVerification from '../components/PinVerification';
+import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../utils/colors';
 
 export default function AuthScreen() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPinVerification, setShowPinVerification] = useState(false);
   const { user, signInWithGoogle, signInWithEmail, verifyPin, actionLoading } =
@@ -36,23 +36,23 @@ export default function AuthScreen() {
       await signInWithGoogle();
     } catch (error) {
       Alert.alert(
-        "Sign In Error",
-        "Failed to sign in with Google. Please try again.",
-        [{ text: "OK" }],
+        'Sign In Error',
+        'Failed to sign in with Google. Please try again.',
+        [{ text: 'OK' }]
       );
     }
   };
 
   const handleEmailSignIn = async () => {
     if (!email.trim()) {
-      Alert.alert("Email Required", "Please enter your email address");
+      Alert.alert('Email Required', 'Please enter your email address');
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address");
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
 
@@ -62,16 +62,16 @@ export default function AuthScreen() {
       await signInWithEmail(email.trim());
       setShowPinVerification(true);
     } catch (error) {
-      console.error("DEBUG: Send PIN error caught:", error);
-      console.error("DEBUG: Error type:", typeof error);
+      console.error('DEBUG: Send PIN error caught:', error);
+      console.error('DEBUG: Error type:', typeof error);
       console.error(
-        "DEBUG: Error message:",
-        error instanceof Error ? error.message : String(error),
+        'DEBUG: Error message:',
+        error instanceof Error ? error.message : String(error)
       );
       Alert.alert(
-        "Failed to Send PIN",
-        error instanceof Error ? error.message : "Please try again.",
-        [{ text: "OK" }],
+        'Failed to Send PIN',
+        error instanceof Error ? error.message : 'Please try again.',
+        [{ text: 'OK' }]
       );
     } finally {
       setIsLoading(false);
@@ -84,8 +84,8 @@ export default function AuthScreen() {
       await verifyPin(email.trim(), pin);
       // Navigation will happen automatically via AuthContext
     } catch (error) {
-      console.error("DEBUG AuthScreen: PIN verification error:", error);
-      console.error("DEBUG AuthScreen: Error details:", {
+      console.error('DEBUG AuthScreen: PIN verification error:', error);
+      console.error('DEBUG AuthScreen: Error details:', {
         type: typeof error,
         message: error instanceof Error ? error.message : String(error),
         name: error?.name,
@@ -93,7 +93,7 @@ export default function AuthScreen() {
       throw new Error(
         error instanceof Error
           ? error.message
-          : "Invalid PIN. Please try again.",
+          : 'Invalid PIN. Please try again.'
       );
     }
   };
@@ -102,19 +102,19 @@ export default function AuthScreen() {
     try {
       await signInWithEmail(email.trim());
     } catch (error) {
-      console.error("Resend PIN error:", error);
-      throw new Error("Failed to resend PIN");
+      console.error('Resend PIN error:', error);
+      throw new Error('Failed to resend PIN');
     }
   };
 
   const handleBackToEmail = () => {
     setShowPinVerification(false);
-    setEmail("");
+    setEmail('');
   };
 
   const handleCancelAuth = () => {
     setShowPinVerification(false);
-    setEmail("");
+    setEmail('');
     navigation.goBack();
   };
 
@@ -122,7 +122,7 @@ export default function AuthScreen() {
     return (
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.backButton}>
           <Button
@@ -146,7 +146,7 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -182,7 +182,7 @@ export default function AuthScreen() {
             autoCorrect={false}
           />
 
-          {email.trim().toLowerCase() === "example@example.com" && (
+          {email.trim().toLowerCase() === 'example@example.com' && (
             <View style={styles.demoNotice}>
               <Text style={styles.demoNoticeText}>
                 🎭 Demo Mode - Sign in without verification
@@ -211,13 +211,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     paddingHorizontal: 32,
     paddingBottom: 32,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     padding: 16,
     paddingTop: 60,
   },
@@ -225,33 +225,33 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   titleSection: {
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 24,
     marginBottom: 8,
-    textAlign: "center",
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
   },
   form: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     maxWidth: 400,
-    width: "100%",
-    alignSelf: "center",
+    width: '100%',
+    alignSelf: 'center',
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 8,
   },
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.google,
   },
   divider: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
   },
   dividerLine: {
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 14,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
   },
   footer: {
@@ -301,11 +301,11 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     color: colors.text.tertiary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 18,
   },
   backButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 60,
     left: 20,
     zIndex: 1,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   demoNotice: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: colors.primary + '20',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   demoNoticeText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

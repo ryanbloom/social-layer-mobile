@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,15 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-import Button from "../components/Button";
-import GroupSelectionModal from "../components/GroupSelectionModal";
-import { useAuth } from "../contexts/AuthContext";
-import { useGroup } from "../contexts/GroupContext";
-import { colors } from "../utils/colors";
+import Button from '../components/Button';
+import GroupSelectionModal from '../components/GroupSelectionModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
+import { colors } from '../utils/colors';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -24,20 +24,20 @@ export default function ProfileScreen() {
   const [showGroupModal, setShowGroupModal] = useState(false);
 
   const handleSignIn = () => {
-    navigation.navigate("Auth" as never);
+    navigation.navigate('Auth' as never);
   };
 
   const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: "Sign Out",
-        style: "destructive",
+        text: 'Sign Out',
+        style: 'destructive',
         onPress: async () => {
           try {
             await signOut();
           } catch (error) {
-            Alert.alert("Error", "Failed to sign out. Please try again.");
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
           }
         },
       },
@@ -80,7 +80,7 @@ export default function ProfileScreen() {
             <Image
               source={{
                 uri: selectedGroup?.image_url,
-                cache: "force-cache",
+                cache: 'force-cache',
               }}
               style={styles.groupImage}
               resizeMode="cover"
@@ -89,10 +89,10 @@ export default function ProfileScreen() {
               <Text style={styles.groupName}>
                 {selectedGroup?.nickname ||
                   selectedGroup?.handle ||
-                  "Default Group"}
+                  'Default Group'}
               </Text>
               <Text style={styles.groupHandle}>
-                @{selectedGroup?.handle || "loading..."}
+                @{selectedGroup?.handle || 'loading...'}
               </Text>
             </View>
           </View>
@@ -113,16 +113,16 @@ export default function ProfileScreen() {
           <Image
             source={{
               uri: user?.image_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.avatar}
             resizeMode="cover"
           />
         </View>
 
-        <Text style={styles.name}>{user?.nickname || "Unknown User"}</Text>
-        <Text style={styles.handle}>@{user?.handle || "unknown"}</Text>
-        <Text style={styles.bio}>{user?.about || "No bio available"}</Text>
+        <Text style={styles.name}>{user?.nickname || 'Unknown User'}</Text>
+        <Text style={styles.handle}>@{user?.handle || 'unknown'}</Text>
+        <Text style={styles.bio}>{user?.about || 'No bio available'}</Text>
       </View>
 
       <View style={styles.menuContainer}>
@@ -130,7 +130,7 @@ export default function ProfileScreen() {
           <Image
             source={{
               uri: selectedGroup?.image_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.menuGroupImage}
             resizeMode="cover"
@@ -140,7 +140,7 @@ export default function ProfileScreen() {
             <Text style={styles.menuSubtext}>
               {selectedGroup?.nickname ||
                 selectedGroup?.handle ||
-                "Default Group"}
+                'Default Group'}
             </Text>
           </View>
           <Ionicons
@@ -183,13 +183,13 @@ const styles = StyleSheet.create({
   },
   authPrompt: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   authTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   authDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
   },
@@ -210,10 +210,10 @@ const styles = StyleSheet.create({
   profileHeader: {
     backgroundColor: colors.background.secondary,
     padding: 24,
-    alignItems: "center",
+    alignItems: 'center',
   },
   avatarContainer: {
-    position: "relative",
+    position: 'relative',
     marginBottom: 16,
   },
   avatar: {
@@ -223,21 +223,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
   },
   editAvatarButton: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: colors.background.secondary,
     borderRadius: 16,
     width: 32,
     height: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.background.tertiary,
   },
   name: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: 4,
   },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 20,
   },
@@ -258,62 +258,62 @@ const styles = StyleSheet.create({
   },
 
   menuContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     margin: 16,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: '#f0f0f0',
   },
   menuText: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
+    color: '#333',
     marginLeft: 12,
   },
   signOutItem: {
     borderBottomWidth: 0,
   },
   signOutText: {
-    color: "#FF3B30",
+    color: '#FF3B30',
   },
   groupSection: {
     marginTop: 32,
-    width: "100%",
+    width: '100%',
     paddingHorizontal: 16,
   },
   groupSectionTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 12,
-    textAlign: "center",
+    textAlign: 'center',
   },
   groupSelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.background.secondary,
     padding: 16,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   groupInfo: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   groupImage: {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 2,
   },

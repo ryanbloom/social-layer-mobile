@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+android/
+ios/
+.expo/
+dist/
+build/
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Generated files
+*.log
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+
+# Metro
+.metro-health-check*

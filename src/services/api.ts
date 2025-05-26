@@ -4,12 +4,12 @@ import {
   gql,
   createHttpLink,
   from,
-} from "@apollo/client";
-import { setContext } from "@apollo/client/link/context";
-import { onError } from "@apollo/client/link/error";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import { Profile, Event, EventWithJoinStatus, Group } from "../types";
+} from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+import { onError } from '@apollo/client/link/error';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { Profile, Event, EventWithJoinStatus, Group } from '../types';
 
 // API Configuration
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
@@ -17,10 +17,10 @@ const GRAPH_URL = Constants.expoConfig?.extra?.graphUrl;
 
 // Group Configuration - Edge Esmeralda Pop-up City
 const DEFAULT_GROUP_ID = 3579;
-const LOCAL_TIMEZONE = "America/Los_Angeles"; // PDT/PST
+const LOCAL_TIMEZONE = 'America/Los_Angeles'; // PDT/PST
 
 if (!API_URL || !GRAPH_URL) {
-  throw new Error("Missing configuration: API_URL or GRAPH_URL is not defined");
+  throw new Error('Missing configuration: API_URL or GRAPH_URL is not defined');
 }
 
 console.log(`API_URL: ${API_URL}`);
@@ -32,14 +32,14 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext(async (_, { headers }) => {
-  const token = await AsyncStorage.getItem("auth_token");
+  const token = await AsyncStorage.getItem('auth_token');
   console.log(
-    "Apollo: Setting auth header",
-    token ? "Token present" : "No token",
+    'Apollo: Setting auth header',
+    token ? 'Token present' : 'No token'
   );
 
   const authHeaders: Record<string, string> = { ...headers };
-  if (token && !token.startsWith("demo_auth_token_")) {
+  if (token && !token.startsWith('demo_auth_token_')) {
     // Only set authorization header for real tokens, not demo tokens
     authHeaders.authorization = `Bearer ${token}`;
   }
@@ -53,25 +53,25 @@ const errorLink = onError(
   ({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
       console.error(
-        "Apollo GraphQL errors:",
+        'Apollo GraphQL errors:',
         graphQLErrors.map(({ message, locations, path }) => ({
           message,
           locations,
           path,
           operation: operation.operationName,
-        })),
+        }))
       );
     }
 
     if (networkError) {
-      console.error("Apollo Network error:", {
+      console.error('Apollo Network error:', {
         message: networkError.message,
         operation: operation.operationName,
         variables: operation.variables,
         networkError,
       });
     }
-  },
+  }
 );
 
 export const apolloClient = new ApolloClient({
@@ -81,43 +81,43 @@ export const apolloClient = new ApolloClient({
 
 // REST API Functions
 export const getProfileByToken = async (
-  auth_token?: string,
+  auth_token?: string
 ): Promise<Profile | null> => {
   if (!auth_token) {
-    console.log("getProfileByToken: No auth token provided");
+    console.log('getProfileByToken: No auth token provided');
     return null;
   }
 
   // Handle demo tokens
-  if (auth_token.startsWith("demo_auth_token_")) {
+  if (auth_token.startsWith('demo_auth_token_')) {
     console.log(
-      "getProfileByToken: Demo token detected, returning demo profile",
+      'getProfileByToken: Demo token detected, returning demo profile'
     );
     return {
       id: 1,
-      handle: "demo_user",
-      nickname: "Demo User",
-      about: "Demo user account",
-      email: "example@example.com",
+      handle: 'demo_user',
+      nickname: 'Demo User',
+      about: 'Demo user account',
+      email: 'example@example.com',
       verified: false,
-      status: "active",
+      status: 'active',
     };
   }
 
   const url = `${API_URL}/profile/me?auth_token=${auth_token}`;
-  console.log("getProfileByToken: Fetching from", url);
+  console.log('getProfileByToken: Fetching from', url);
 
   try {
     const response = await fetch(url);
     console.log(
-      "getProfileByToken: Response status",
+      'getProfileByToken: Response status',
       response.status,
-      response.statusText,
+      response.statusText
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("getProfileByToken: API error", {
+      console.error('getProfileByToken: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -127,35 +127,35 @@ export const getProfileByToken = async (
     }
 
     const data = await response.json();
-    console.log("getProfileByToken: Success", data);
+    console.log('getProfileByToken: Success', data);
     return data.profile as Profile;
   } catch (error) {
-    console.error("getProfileByToken: Network/Parse error", {
+    console.error('getProfileByToken: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
-      auth_token: auth_token?.substring(0, 10) + "...",
+      auth_token: auth_token?.substring(0, 10) + '...',
     });
     return null;
   }
 };
 
 export const getProfileByHandle = async (
-  handle: string,
+  handle: string
 ): Promise<Profile | null> => {
   const url = `${API_URL}/profile/get_by_handle?handle=${handle}`;
-  console.log("getProfileByHandle: Fetching from", url);
+  console.log('getProfileByHandle: Fetching from', url);
 
   try {
     const response = await fetch(url);
     console.log(
-      "getProfileByHandle: Response status",
+      'getProfileByHandle: Response status',
       response.status,
-      response.statusText,
+      response.statusText
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("getProfileByHandle: API error", {
+      console.error('getProfileByHandle: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -166,10 +166,10 @@ export const getProfileByHandle = async (
     }
 
     const data = await response.json();
-    console.log("getProfileByHandle: Success", data);
+    console.log('getProfileByHandle: Success', data);
     return data.profile as Profile;
   } catch (error) {
-    console.error("getProfileByHandle: Network/Parse error", {
+    console.error('getProfileByHandle: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       handle,
@@ -179,22 +179,22 @@ export const getProfileByHandle = async (
 };
 
 export const getEventDetail = async (
-  event_id: number,
+  event_id: number
 ): Promise<Event | null> => {
   const url = `${API_URL}/event/get?id=${event_id}`;
-  console.log("getEventDetail: Fetching from", url);
+  console.log('getEventDetail: Fetching from', url);
 
   try {
     const response = await fetch(url);
     console.log(
-      "getEventDetail: Response status",
+      'getEventDetail: Response status',
       response.status,
-      response.statusText,
+      response.statusText
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("getEventDetail: API error", {
+      console.error('getEventDetail: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -210,7 +210,7 @@ export const getEventDetail = async (
       venue_id: data.venue?.id,
     } as Event;
   } catch (error) {
-    console.error("getEventDetail: Network/Parse error", {
+    console.error('getEventDetail: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       event_id,
@@ -221,21 +221,21 @@ export const getEventDetail = async (
 
 export const uploadFile = async (
   file: FormData,
-  auth_token: string,
+  auth_token: string
 ): Promise<string> => {
   const formData = new FormData();
-  formData.append("auth_token", auth_token);
-  formData.append("uploader", "user");
-  formData.append("resource", Math.random().toString(36).slice(-8));
-  formData.append("data", file);
+  formData.append('auth_token', auth_token);
+  formData.append('uploader', 'user');
+  formData.append('resource', Math.random().toString(36).slice(-8));
+  formData.append('data', file);
 
   const response = await fetch(`${API_URL}/service/upload_image`, {
-    method: "POST",
+    method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
-    throw new Error("Upload failed");
+    throw new Error('Upload failed');
   }
 
   const data = await response.json();
@@ -244,18 +244,18 @@ export const uploadFile = async (
 
 export const updateProfile = async (
   profile: Profile,
-  auth_token: string,
+  auth_token: string
 ): Promise<Profile> => {
   const response = await fetch(`${API_URL}/profile/update`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({ ...profile, auth_token }),
   });
 
   if (!response.ok) {
-    throw new Error("Update failed");
+    throw new Error('Update failed');
   }
 
   const data = await response.json();
@@ -401,43 +401,43 @@ export const GET_USER_EVENTS = gql`
 
 // Auth functions
 export const storeAuthToken = async (token: string) => {
-  await AsyncStorage.setItem("auth_token", token);
+  await AsyncStorage.setItem('auth_token', token);
 };
 
 export const getAuthToken = async (): Promise<string | null> => {
-  return await AsyncStorage.getItem("auth_token");
+  return await AsyncStorage.getItem('auth_token');
 };
 
 export const removeAuthToken = async () => {
-  await AsyncStorage.removeItem("auth_token");
+  await AsyncStorage.removeItem('auth_token');
 };
 
 // Email PIN authentication functions
 export const sendEmailPin = async (email: string): Promise<void> => {
   const url = `${API_URL}/service/send_email`;
-  console.log("DEBUG API: sendEmailPin called");
-  console.log("DEBUG API: API_URL:", API_URL);
-  console.log("DEBUG API: Full URL:", url);
-  console.log("DEBUG API: Email:", email);
+  console.log('DEBUG API: sendEmailPin called');
+  console.log('DEBUG API: API_URL:', API_URL);
+  console.log('DEBUG API: Full URL:', url);
+  console.log('DEBUG API: Email:', email);
 
   const requestBody = {
     email,
-    context: "email-signin",
+    context: 'email-signin',
   };
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      console.log("DEBUG API: Response not OK, reading error text");
+      console.log('DEBUG API: Response not OK, reading error text');
       const errorText = await response.text();
-      console.error("DEBUG API: API error details:", {
+      console.error('DEBUG API: API error details:', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -445,24 +445,24 @@ export const sendEmailPin = async (email: string): Promise<void> => {
         email,
       });
       throw new Error(
-        `Failed to send PIN: ${response.status} ${response.statusText} - ${errorText}`,
+        `Failed to send PIN: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
     const data = await response.json();
   } catch (error) {
-    console.error("DEBUG API: Exception caught:", error);
-    console.error("DEBUG API: Error type:", typeof error);
-    console.error("DEBUG API: Error name:", error?.name);
-    console.error("DEBUG API: Error message:", error?.message);
-    console.error("DEBUG API: Full error object:", error);
+    console.error('DEBUG API: Exception caught:', error);
+    console.error('DEBUG API: Error type:', typeof error);
+    console.error('DEBUG API: Error name:', error?.name);
+    console.error('DEBUG API: Error message:', error?.message);
+    console.error('DEBUG API: Full error object:', error);
     throw error;
   }
 };
 
 export const verifyEmailPin = async (
   email: string,
-  pin: string,
+  pin: string
 ): Promise<string> => {
   const url = `${API_URL}/profile/signin_with_email`;
 
@@ -473,17 +473,17 @@ export const verifyEmailPin = async (
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      console.log("DEBUG API: Response not OK, reading error text");
+      console.log('DEBUG API: Response not OK, reading error text');
       const errorText = await response.text();
-      console.error("DEBUG API: API error details:", {
+      console.error('DEBUG API: API error details:', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -492,27 +492,27 @@ export const verifyEmailPin = async (
         pin,
       });
       throw new Error(
-        `PIN verification failed: ${response.status} ${response.statusText} - ${errorText}`,
+        `PIN verification failed: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
     const data = await response.json();
 
     if (!data.auth_token) {
-      console.error("DEBUG API: No auth_token in response:", data);
-      throw new Error("No auth token received from server");
+      console.error('DEBUG API: No auth_token in response:', data);
+      throw new Error('No auth token received from server');
     }
 
     console.log(
-      "DEBUG API: Returning auth_token:",
-      data.auth_token?.substring(0, 10) + "...",
+      'DEBUG API: Returning auth_token:',
+      data.auth_token?.substring(0, 10) + '...'
     );
     return data.auth_token;
   } catch (error) {
-    console.error("DEBUG API: Exception caught:", error);
-    console.error("DEBUG API: Error type:", typeof error);
-    console.error("DEBUG API: Error name:", error?.name);
-    console.error("DEBUG API: Error message:", error?.message);
+    console.error('DEBUG API: Exception caught:', error);
+    console.error('DEBUG API: Error type:', typeof error);
+    console.error('DEBUG API: Error name:', error?.name);
+    console.error('DEBUG API: Error message:', error?.message);
     throw error;
   }
 };
@@ -520,11 +520,11 @@ export const verifyEmailPin = async (
 // RSVP Functions
 export const attendEvent = async (
   eventId: number,
-  authToken: string,
+  authToken: string
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith("demo_auth_token_")) {
-    console.log("attendEvent: Demo mode - simulating successful RSVP", eventId);
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log('attendEvent: Demo mode - simulating successful RSVP', eventId);
     // Simulate a small delay
     await new Promise((resolve) => setTimeout(resolve, 500));
     return;
@@ -534,9 +534,9 @@ export const attendEvent = async (
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         id: eventId,
@@ -546,7 +546,7 @@ export const attendEvent = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("attendEvent: API error", {
+      console.error('attendEvent: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -556,7 +556,7 @@ export const attendEvent = async (
       throw new Error(errorText || `Failed to join event: ${response.status}`);
     }
   } catch (error) {
-    console.error("attendEvent: Network/Parse error", {
+    console.error('attendEvent: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       eventId,
@@ -567,13 +567,13 @@ export const attendEvent = async (
 
 export const cancelAttendance = async (
   eventId: number,
-  authToken: string,
+  authToken: string
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith("demo_auth_token_")) {
+  if (authToken.startsWith('demo_auth_token_')) {
     console.log(
-      "cancelAttendance: Demo mode - simulating successful cancellation",
-      eventId,
+      'cancelAttendance: Demo mode - simulating successful cancellation',
+      eventId
     );
     // Simulate a small delay
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -581,13 +581,13 @@ export const cancelAttendance = async (
   }
 
   const url = `${API_URL}/event/cancel`;
-  console.log("cancelAttendance: Canceling attendance for event", eventId);
+  console.log('cancelAttendance: Canceling attendance for event', eventId);
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         id: eventId,
@@ -597,7 +597,7 @@ export const cancelAttendance = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("cancelAttendance: API error", {
+      console.error('cancelAttendance: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -605,16 +605,16 @@ export const cancelAttendance = async (
         eventId,
       });
       throw new Error(
-        errorText || `Failed to cancel attendance: ${response.status}`,
+        errorText || `Failed to cancel attendance: ${response.status}`
       );
     }
 
     console.log(
-      "cancelAttendance: Successfully canceled attendance for event",
-      eventId,
+      'cancelAttendance: Successfully canceled attendance for event',
+      eventId
     );
   } catch (error) {
-    console.error("cancelAttendance: Network/Parse error", {
+    console.error('cancelAttendance: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       eventId,
@@ -625,16 +625,16 @@ export const cancelAttendance = async (
 
 // My Events Functions
 export const getMyEvents = async (
-  authToken: string,
+  authToken: string
 ): Promise<{ attending: Event[]; hosting: Event[]; starred: Event[] }> => {
   const profile = await getProfileByToken(authToken);
   if (!profile) {
-    throw new Error("Unable to get user profile");
+    throw new Error('Unable to get user profile');
   }
 
   // Handle demo mode - return empty events for the correct group only
-  if (authToken.startsWith("demo_auth_token_")) {
-    console.log("getMyEvents: Demo mode - returning empty events lists");
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log('getMyEvents: Demo mode - returning empty events lists');
     return {
       attending: [],
       hosting: [],
@@ -727,7 +727,7 @@ export const getMyEvents = async (
 
     // Get starred events - using REST API similar to web app
     const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
-    console.log("getMyEvents: Fetching starred events from", starredUrl);
+    console.log('getMyEvents: Fetching starred events from', starredUrl);
 
     let starredEvents: Event[] = [];
     try {
@@ -744,36 +744,36 @@ export const getMyEvents = async (
           .reverse();
       } else {
         console.warn(
-          "getMyEvents: Failed to fetch starred events",
-          starredResponse.status,
+          'getMyEvents: Failed to fetch starred events',
+          starredResponse.status
         );
       }
     } catch (error) {
-      console.warn("getMyEvents: Error fetching starred events", error);
+      console.warn('getMyEvents: Error fetching starred events', error);
     }
 
     const attendingEvents = attendingResult.data.participants.map(
-      (p: any) => p.event,
+      (p: any) => p.event
     );
     const hostingEvents = hostingResult.data.events;
 
-    console.log("getMyEvents: Success", {
+    console.log('getMyEvents: Success', {
       attending: attendingEvents.length,
       hosting: hostingEvents.length,
       starred: starredEvents.length,
     });
 
     console.log(
-      "Sample attending event IDs:",
-      attendingEvents.slice(0, 3).map((e) => e.id),
+      'Sample attending event IDs:',
+      attendingEvents.slice(0, 3).map((e) => e.id)
     );
     console.log(
-      "Sample hosting event IDs:",
-      hostingEvents.slice(0, 3).map((e) => e.id),
+      'Sample hosting event IDs:',
+      hostingEvents.slice(0, 3).map((e) => e.id)
     );
     console.log(
-      "Sample starred event IDs:",
-      starredEvents.slice(0, 3).map((e) => e.id),
+      'Sample starred event IDs:',
+      starredEvents.slice(0, 3).map((e) => e.id)
     );
 
     return {
@@ -782,7 +782,7 @@ export const getMyEvents = async (
       starred: starredEvents,
     };
   } catch (error) {
-    console.error("getMyEvents: Error", error);
+    console.error('getMyEvents: Error', error);
     throw error;
   }
 };
@@ -805,41 +805,41 @@ export { DEFAULT_GROUP_ID };
 // Star/Unstar Event Functions
 export const starEvent = async (
   eventId: number,
-  authToken: string,
+  authToken: string
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith("demo_auth_token_")) {
-    console.log("starEvent: Demo mode - simulating successful star", eventId);
+  if (authToken.startsWith('demo_auth_token_')) {
+    console.log('starEvent: Demo mode - simulating successful star', eventId);
     // Simulate a small delay
     await new Promise((resolve) => setTimeout(resolve, 300));
     return;
   }
 
   const url = `${API_URL}/comment/star`;
-  console.log("starEvent: Starring event", eventId);
+  console.log('starEvent: Starring event', eventId);
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         item_id: eventId,
         auth_token: authToken,
-        item_type: "Event",
+        item_type: 'Event',
       }),
     });
 
     console.log(
-      "starEvent: Response status",
+      'starEvent: Response status',
       response.status,
-      response.statusText,
+      response.statusText
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("starEvent: API error", {
+      console.error('starEvent: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -849,9 +849,9 @@ export const starEvent = async (
       throw new Error(errorText || `Failed to star event: ${response.status}`);
     }
 
-    console.log("starEvent: Successfully starred event", eventId);
+    console.log('starEvent: Successfully starred event', eventId);
   } catch (error) {
-    console.error("starEvent: Network/Parse error", {
+    console.error('starEvent: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       eventId,
@@ -862,13 +862,13 @@ export const starEvent = async (
 
 export const unstarEvent = async (
   eventId: number,
-  authToken: string,
+  authToken: string
 ): Promise<void> => {
   // Check if this is a demo token
-  if (authToken.startsWith("demo_auth_token_")) {
+  if (authToken.startsWith('demo_auth_token_')) {
     console.log(
-      "unstarEvent: Demo mode - simulating successful unstar",
-      eventId,
+      'unstarEvent: Demo mode - simulating successful unstar',
+      eventId
     );
     // Simulate a small delay
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -876,30 +876,30 @@ export const unstarEvent = async (
   }
 
   const url = `${API_URL}/comment/unstar`;
-  console.log("unstarEvent: Unstarring event", eventId);
+  console.log('unstarEvent: Unstarring event', eventId);
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         item_id: eventId,
         auth_token: authToken,
-        item_type: "Event",
+        item_type: 'Event',
       }),
     });
 
     console.log(
-      "unstarEvent: Response status",
+      'unstarEvent: Response status',
       response.status,
-      response.statusText,
+      response.statusText
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("unstarEvent: API error", {
+      console.error('unstarEvent: API error', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -907,11 +907,11 @@ export const unstarEvent = async (
         eventId,
       });
       throw new Error(
-        errorText || `Failed to unstar event: ${response.status}`,
+        errorText || `Failed to unstar event: ${response.status}`
       );
     }
   } catch (error) {
-    console.error("unstarEvent: Network/Parse error", {
+    console.error('unstarEvent: Network/Parse error', {
       error: error instanceof Error ? error.message : error,
       url,
       eventId,
@@ -970,21 +970,21 @@ export const getAllGroups = async (): Promise<Group[]> => {
     const result = await apolloClient.query({
       query: GET_ALL_GROUPS,
       variables: { limit: 100 },
-      fetchPolicy: "network-only",
+      fetchPolicy: 'network-only',
     });
 
     const groups = result.data.groups || [];
-    console.log("getAllGroups: Success", `${groups.length} groups`);
+    console.log('getAllGroups: Success', `${groups.length} groups`);
     return groups as Group[];
   } catch (error) {
-    console.error("getAllGroups: GraphQL error", error);
+    console.error('getAllGroups: GraphQL error', error);
     return [];
   }
 };
 
 export const getUserGroups = async (authToken: string): Promise<Group[]> => {
-  if (!authToken || authToken.startsWith("demo_auth_token_")) {
-    console.log("getUserGroups: Demo mode or no token - returning empty array");
+  if (!authToken || authToken.startsWith('demo_auth_token_')) {
+    console.log('getUserGroups: Demo mode or no token - returning empty array');
     return [];
   }
 
@@ -996,14 +996,14 @@ export const getUserGroups = async (authToken: string): Promise<Group[]> => {
     }
 
     console.log(
-      "getUserGroups: Fetching user groups via GraphQL for user",
-      profile.id,
+      'getUserGroups: Fetching user groups via GraphQL for user',
+      profile.id
     );
 
     const attendingResult = await apolloClient.query({
       query: GET_USER_GROUPS,
       variables: { userId: profile.id },
-      fetchPolicy: "network-only",
+      fetchPolicy: 'network-only',
     });
 
     const userGroups = attendingResult.data.participants
@@ -1016,10 +1016,10 @@ export const getUserGroups = async (authToken: string): Promise<Group[]> => {
         return unique;
       }, []);
 
-    console.log("getUserGroups: Success", `${userGroups.length} user groups`);
+    console.log('getUserGroups: Success', `${userGroups.length} user groups`);
     return userGroups as Group[];
   } catch (error) {
-    console.error("getUserGroups: Error", error);
+    console.error('getUserGroups: Error', error);
     return [];
   }
 };

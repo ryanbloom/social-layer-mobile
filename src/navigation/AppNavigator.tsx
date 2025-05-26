@@ -1,21 +1,21 @@
-import React from "react";
-import { View, ActivityIndicator } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useAuth } from "../contexts/AuthContext";
-import { colors } from "../utils/colors";
+import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../utils/colors';
 
-import { RootStackParamList, TabParamList } from "../types";
-import DiscoverScreen from "../screens/DiscoverScreen";
-import CalendarScreen from "../screens/CalendarScreen";
-import MyEventsScreen from "../screens/MyEventsScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import EventDetailScreen from "../screens/EventDetailScreen";
-import CreateEventScreen from "../screens/CreateEventScreen";
-import AuthScreen from "../screens/AuthScreen";
+import { RootStackParamList, TabParamList } from '../types';
+import DiscoverScreen from '../screens/DiscoverScreen';
+import CalendarScreen from '../screens/CalendarScreen';
+import MyEventsScreen from '../screens/MyEventsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import EventDetailScreen from '../screens/EventDetailScreen';
+import CreateEventScreen from '../screens/CreateEventScreen';
+import AuthScreen from '../screens/AuthScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -27,16 +27,16 @@ function TabNavigator() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
-          if (route.name === "Discover") {
-            iconName = focused ? "compass" : "compass-outline";
-          } else if (route.name === "Calendar") {
-            iconName = focused ? "calendar" : "calendar-outline";
-          } else if (route.name === "MyEvents") {
-            iconName = focused ? "list" : "list-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
+          if (route.name === 'Discover') {
+            iconName = focused ? 'compass' : 'compass-outline';
+          } else if (route.name === 'Calendar') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'MyEvents') {
+            iconName = focused ? 'list' : 'list-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
           } else {
-            iconName = "help-outline";
+            iconName = 'help-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -48,29 +48,29 @@ function TabNavigator() {
         },
         headerTintColor: colors.text.white,
         headerTitleStyle: {
-          fontWeight: "bold",
+          fontWeight: 'bold',
         },
       })}
     >
       <Tab.Screen
         name="Discover"
         component={DiscoverScreen}
-        options={{ title: "Discover Events" }}
+        options={{ title: 'Discover Events' }}
       />
       <Tab.Screen
         name="Calendar"
         component={CalendarScreen}
-        options={{ title: "Calendar" }}
+        options={{ title: 'Calendar' }}
       />
       <Tab.Screen
         name="MyEvents"
         component={MyEventsScreen}
-        options={{ title: "My Events" }}
+        options={{ title: 'My Events' }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ title: "Profile" }}
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );
@@ -81,7 +81,7 @@ export default function AppNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -97,7 +97,7 @@ export default function AppNavigator() {
           },
           headerTintColor: colors.text.white,
           headerTitleStyle: {
-            fontWeight: "bold",
+            fontWeight: 'bold',
           },
         }}
       >
@@ -109,19 +109,19 @@ export default function AppNavigator() {
         <Stack.Screen
           name="EventDetail"
           component={EventDetailScreen}
-          options={{ title: "Event Details" }}
+          options={{ title: 'Event Details' }}
         />
         <Stack.Screen
           name="CreateEvent"
           component={CreateEventScreen}
-          options={{ title: "Create Event" }}
+          options={{ title: 'Create Event' }}
         />
         <Stack.Screen
           name="Auth"
           component={AuthScreen}
           options={{
             headerShown: false,
-            presentation: "modal",
+            presentation: 'modal',
           }}
         />
       </Stack.Navigator>

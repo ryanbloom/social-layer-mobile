@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../contexts/AuthContext";
-import { useGroup } from "../contexts/GroupContext";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 import {
   getMyEvents,
   getAuthToken,
@@ -20,23 +20,29 @@ import {
   unstarEvent,
   apolloClient,
   getEventsForGroup,
-} from "../services/api";
-import Button from "../components/Button";
-import EventCard from "../components/EventCard";
-import { Event, EventWithJoinStatus } from "../types";
-import { colors } from "../utils/colors";
+} from '../services/api';
+import Button from '../components/Button';
+import EventCard from '../components/EventCard';
+import { Event, EventWithJoinStatus } from '../types';
+import { colors } from '../utils/colors';
 
-type EventTab = "hosting" | "attending" | "starred";
+type EventTab = 'hosting' | 'attending' | 'starred';
 
 export default function MyEventsScreen() {
-  const [activeTab, setActiveTab] = useState<EventTab>("attending");
+  const [activeTab, setActiveTab] = useState<EventTab>('attending');
   const navigation = useNavigation();
-  const { user, isDemoMode, demoStarredEvents, demoAttendingEvents, toggleDemoStar } = useAuth();
+  const {
+    user,
+    isDemoMode,
+    demoStarredEvents,
+    demoAttendingEvents,
+    toggleDemoStar,
+  } = useAuth();
   const { selectedGroupId } = useGroup();
 
   const handleStarPress = async (eventId: number) => {
     if (!user) {
-      Alert.alert("Error", "Unable to update star status.");
+      Alert.alert('Error', 'Unable to update star status.');
       return;
     }
 
@@ -49,13 +55,13 @@ export default function MyEventsScreen() {
       }
 
       if (!myEvents) {
-        Alert.alert("Error", "Unable to update star status.");
+        Alert.alert('Error', 'Unable to update star status.');
         return;
       }
 
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error("No authentication token found");
+        throw new Error('No authentication token found');
       }
 
       const isCurrentlyStarred = myEvents.starred.some((e) => e.id === eventId);
@@ -69,10 +75,10 @@ export default function MyEventsScreen() {
       // Refetch events to get updated starred status
       await refetch();
     } catch (error: any) {
-      console.error("Star/unstar error:", error);
+      console.error('Star/unstar error:', error);
       const message =
-        error?.message || "Failed to update star status. Please try again.";
-      Alert.alert("Error", message);
+        error?.message || 'Failed to update star status. Please try again.';
+      Alert.alert('Error', message);
     }
   };
 
@@ -83,11 +89,17 @@ export default function MyEventsScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["myEvents", user?.id, isDemoMode, Array.from(demoStarredEvents).sort(), Array.from(demoAttendingEvents).sort()],
+    queryKey: [
+      'myEvents',
+      user?.id,
+      isDemoMode,
+      Array.from(demoStarredEvents).sort(),
+      Array.from(demoAttendingEvents).sort(),
+    ],
     queryFn: async () => {
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error("No authentication token found");
+        throw new Error('No authentication token found');
       }
 
       // Handle demo mode - get group events and filter them
@@ -96,17 +108,17 @@ export default function MyEventsScreen() {
         const result = await apolloClient.query({
           query,
           variables,
-          fetchPolicy: "network-only",
+          fetchPolicy: 'network-only',
         });
-        
+
         const allGroupEvents = result.data.events || [];
-        
+
         // Filter events based on demo state
-        const attendingEvents = allGroupEvents.filter((event: Event) => 
+        const attendingEvents = allGroupEvents.filter((event: Event) =>
           demoAttendingEvents.has(event.id)
         );
-        
-        const starredEvents = allGroupEvents.filter((event: Event) => 
+
+        const starredEvents = allGroupEvents.filter((event: Event) =>
           demoStarredEvents.has(event.id)
         );
 
@@ -124,7 +136,7 @@ export default function MyEventsScreen() {
   });
 
   const handleSignIn = () => {
-    navigation.navigate("Auth" as never);
+    navigation.navigate('Auth' as never);
   };
 
   const renderTabButton = (tab: EventTab, title: string, icon: string) => {
@@ -152,13 +164,13 @@ export default function MyEventsScreen() {
 
     let events: Event[] = [];
     switch (activeTab) {
-      case "hosting":
+      case 'hosting':
         events = myEvents.hosting;
         break;
-      case "attending":
+      case 'attending':
         events = myEvents.attending;
         break;
-      case "starred":
+      case 'starred':
         events = myEvents.starred;
         break;
       default:
@@ -170,10 +182,10 @@ export default function MyEventsScreen() {
       ...event,
       is_owner: event.owner.id === user.id,
       is_attending:
-        activeTab === "attending" ||
+        activeTab === 'attending' ||
         myEvents.attending.some((e) => e.id === event.id),
       is_starred:
-        activeTab === "starred" ||
+        activeTab === 'starred' ||
         myEvents.starred.some((e) => e.id === event.id),
     }));
   };
@@ -184,21 +196,21 @@ export default function MyEventsScreen() {
     let description: string;
 
     switch (activeTab) {
-      case "hosting":
-        icon = "megaphone-outline";
-        title = "No Events Hosted";
+      case 'hosting':
+        icon = 'megaphone-outline';
+        title = 'No Events Hosted';
         description =
           "You haven't created any events yet. Start by creating your first event!";
         break;
-      case "attending":
-        icon = "calendar-outline";
-        title = "No Events Attended";
+      case 'attending':
+        icon = 'calendar-outline';
+        title = 'No Events Attended';
         description =
           "You haven't RSVP'd to any events yet. Discover events you'd like to attend!";
         break;
-      case "starred":
-        icon = "star-outline";
-        title = "No Starred Events";
+      case 'starred':
+        icon = 'star-outline';
+        title = 'No Starred Events';
         description =
           "You haven't starred any events yet. Star events you're interested in!";
         break;
@@ -268,14 +280,14 @@ export default function MyEventsScreen() {
             key={event.id}
             event={event}
             onPress={() => {
-              console.log("=== MyEventsScreen Navigation Debug ===");
-              console.log("Navigating to event with ID:", event.id);
-              console.log("Event ID type:", typeof event.id);
-              console.log("Event title:", event.title);
-              console.log("Full event object:", JSON.stringify(event, null, 2));
+              console.log('=== MyEventsScreen Navigation Debug ===');
+              console.log('Navigating to event with ID:', event.id);
+              console.log('Event ID type:', typeof event.id);
+              console.log('Event title:', event.title);
+              console.log('Full event object:', JSON.stringify(event, null, 2));
               navigation.navigate(
-                "EventDetail" as never,
-                { eventId: event.id } as never,
+                'EventDetail' as never,
+                { eventId: event.id } as never
               );
             }}
             onStarPress={() => handleStarPress(event.id)}
@@ -316,9 +328,9 @@ export default function MyEventsScreen() {
       </View>
 
       <View style={styles.tabContainer}>
-        {renderTabButton("attending", "Attending", "calendar")}
-        {renderTabButton("hosting", "Hosting", "megaphone")}
-        {renderTabButton("starred", "Starred", "star")}
+        {renderTabButton('attending', 'Attending', 'calendar')}
+        {renderTabButton('hosting', 'Hosting', 'megaphone')}
+        {renderTabButton('starred', 'Starred', 'star')}
       </View>
 
       {renderContent()}
@@ -333,8 +345,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   loadingText: {
@@ -344,13 +356,13 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
@@ -358,7 +370,7 @@ const styles = StyleSheet.create({
   errorDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
   },
@@ -371,7 +383,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: colors.text.white,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   header: {
     padding: 16,
@@ -379,7 +391,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: 4,
   },
@@ -388,16 +400,16 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     backgroundColor: colors.background.secondary,
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
   tabButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -411,7 +423,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.secondary,
     marginLeft: 8,
   },
@@ -426,13 +438,13 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   emptyStateTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
@@ -440,27 +452,27 @@ const styles = StyleSheet.create({
   emptyStateDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
   },
   authPrompt: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   authTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
-    textAlign: "center",
+    textAlign: 'center',
   },
   authDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
   },

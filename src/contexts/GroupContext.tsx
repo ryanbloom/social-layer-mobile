@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Group } from '../types';
 
@@ -31,7 +37,8 @@ interface GroupProviderProps {
 }
 
 export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
-  const [selectedGroupId, setSelectedGroupIdState] = useState<number>(DEFAULT_GROUP_ID);
+  const [selectedGroupId, setSelectedGroupIdState] =
+    useState<number>(DEFAULT_GROUP_ID);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);

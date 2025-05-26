@@ -1,12 +1,12 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { EventWithJoinStatus } from "../types";
-import Card from "./Card";
-import Badge from "./Badge";
-import { formatEventTime, getEventStatus } from "../utils/dateUtils";
-import { LOCAL_TIMEZONE } from "../services/api";
-import { colors } from "../utils/colors";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { EventWithJoinStatus } from '../types';
+import Card from './Card';
+import Badge from './Badge';
+import { formatEventTime, getEventStatus } from '../utils/dateUtils';
+import { LOCAL_TIMEZONE } from '../services/api';
+import { colors } from '../utils/colors';
 
 interface EventCardProps {
   event: EventWithJoinStatus;
@@ -23,12 +23,12 @@ export default function EventCard({
   const { date, time } = formatEventTime(
     event.start_time,
     event.timezone,
-    LOCAL_TIMEZONE,
+    LOCAL_TIMEZONE
   );
 
-  const customHost = event.event_roles?.find((r) => r.role === "custom_host");
-  const groupHost = event.event_roles?.find((r) => r.role === "group_host");
-  const cohosts = event.event_roles?.filter((r) => r.role === "co_host");
+  const customHost = event.event_roles?.find((r) => r.role === 'custom_host');
+  const groupHost = event.event_roles?.find((r) => r.role === 'group_host');
+  const cohosts = event.event_roles?.filter((r) => r.role === 'co_host');
   const host =
     customHost?.nickname ||
     groupHost?.nickname ||
@@ -41,7 +41,7 @@ export default function EventCard({
       {onStarPress && (
         <TouchableOpacity style={styles.starButton} onPress={onStarPress}>
           <Ionicons
-            name={event.is_starred ? "star" : "star-outline"}
+            name={event.is_starred ? 'star' : 'star-outline'}
             size={20}
             color={event.is_starred ? colors.star : colors.text.tertiary}
           />
@@ -51,20 +51,20 @@ export default function EventCard({
       <View style={event.cover_url ? styles.content : styles.contentFullWidth}>
         {/* Badges */}
         <View style={styles.badgeContainer}>
-          {eventStatus === "past" && <Badge text="Past" variant="past" />}
-          {event.display === "private" && (
+          {eventStatus === 'past' && <Badge text="Past" variant="past" />}
+          {event.display === 'private' && (
             <Badge text="Private" variant="private" />
           )}
-          {event.status === "pending" && (
+          {event.status === 'pending' && (
             <Badge text="Pending" variant="pending" />
           )}
-          {event.status === "cancel" && (
+          {event.status === 'cancel' && (
             <Badge text="Canceled" variant="cancel" />
           )}
-          {eventStatus === "ongoing" && (
+          {eventStatus === 'ongoing' && (
             <Badge text="Ongoing" variant="ongoing" />
           )}
-          {eventStatus === "upcoming" && (
+          {eventStatus === 'upcoming' && (
             <Badge text="Upcoming" variant="upcoming" />
           )}
           {event.is_owner && <Badge text="Hosting" variant="hosting" />}
@@ -80,7 +80,7 @@ export default function EventCard({
         {event.tags && event.tags.length > 0 && (
           <View style={styles.tagsContainer}>
             {event.tags
-              .filter((tag) => !tag.startsWith(":"))
+              .filter((tag) => !tag.startsWith(':'))
               .slice(0, 3)
               .map((tag, index) => (
                 <View key={index} style={styles.tag}>
@@ -110,7 +110,7 @@ export default function EventCard({
           hosted by {host}
           {cohosts &&
             cohosts.length > 0 &&
-            `, ${cohosts.map((c) => c.nickname).join(", ")}`}
+            `, ${cohosts.map((c) => c.nickname).join(', ')}`}
         </Text>
 
         {/* Date and Time */}
@@ -160,7 +160,7 @@ export default function EventCard({
           <Image
             source={{
               uri: event.cover_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.image}
             resizeMode="cover"
@@ -178,25 +178,25 @@ function getTagColor(tag: string): string {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash);
   }
   const colors = [
-    "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
-    "#96CEB4",
-    "#FECA57",
-    "#FF9FF3",
-    "#54A0FF",
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FECA57',
+    '#FF9FF3',
+    '#54A0FF',
   ];
   return colors[Math.abs(hash) % colors.length];
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginVertical: 8,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   starButton: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     right: 8,
     zIndex: 1,
@@ -210,25 +210,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badgeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 8,
     lineHeight: 22,
   },
   tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   tag: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: 12,
     marginBottom: 4,
   },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   track: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
     marginBottom: 4,
   },
   host: {
@@ -253,8 +253,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dateTimeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
   dateTime: {
@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
   location: {
@@ -278,8 +278,8 @@ const styles = StyleSheet.create({
     height: 100,
   },
   image: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
   },
 });

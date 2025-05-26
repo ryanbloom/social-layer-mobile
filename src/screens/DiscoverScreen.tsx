@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,48 +8,48 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
-} from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { Ionicons } from "@expo/vector-icons";
+} from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
 
-import { EventWithJoinStatus, RootStackParamList } from "../types";
+import { EventWithJoinStatus, RootStackParamList } from '../types';
 import {
   apolloClient,
   getEventsForGroup,
   starEvent,
   unstarEvent,
   getAuthToken,
-} from "../services/api";
-import EventCard from "../components/EventCard";
-import Button from "../components/Button";
-import { useAuth } from "../contexts/AuthContext";
-import { useGroup } from "../contexts/GroupContext";
-import { getEventStatus } from "../utils/dateUtils";
-import { colors } from "../utils/colors";
-import Constants from "expo-constants";
+} from '../services/api';
+import EventCard from '../components/EventCard';
+import Button from '../components/Button';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
+import { getEventStatus } from '../utils/dateUtils';
+import { colors } from '../utils/colors';
+import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
 type DiscoverScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  "Main"
+  'Main'
 >;
 
-type EventFilter = "upcoming" | "all";
+type EventFilter = 'upcoming' | 'all';
 
 export default function DiscoverScreen() {
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
   const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
-  const [eventFilter, setEventFilter] = useState<EventFilter>("upcoming");
+  const [eventFilter, setEventFilter] = useState<EventFilter>('upcoming');
   const { user, isDemoMode, demoStarredEvents, toggleDemoStar } = useAuth();
   const { selectedGroupId, allGroups } = useGroup();
 
   console.log(
-    "DEBUG DiscoverScreen: User in DiscoverScreen:",
-    user?.handle || "null",
+    'DEBUG DiscoverScreen: User in DiscoverScreen:',
+    user?.handle || 'null'
   );
 
   const {
@@ -58,7 +58,7 @@ export default function DiscoverScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["events", "group", selectedGroupId],
+    queryKey: ['events', 'group', selectedGroupId],
     queryFn: async () => {
       console.log(selectedGroupId);
       const { query, variables } = getEventsForGroup(selectedGroupId);
@@ -67,11 +67,11 @@ export default function DiscoverScreen() {
         const result = await apolloClient.query({
           query,
           variables,
-          fetchPolicy: "network-only",
+          fetchPolicy: 'network-only',
         });
         return result.data.events as EventWithJoinStatus[];
       } catch (error) {
-        console.error("DiscoverScreen: Query failed", error);
+        console.error('DiscoverScreen: Query failed', error);
         throw error;
       }
     },
@@ -83,25 +83,25 @@ export default function DiscoverScreen() {
       return [];
     }
 
-    if (eventFilter === "upcoming") {
+    if (eventFilter === 'upcoming') {
       const filtered = eventsData.filter((event) => {
         const status = getEventStatus(event.start_time, event.end_time);
         console.log(`Event "${event.title}" status: ${status}`);
-        return status === "upcoming" || status === "ongoing";
+        return status === 'upcoming' || status === 'ongoing';
       });
       console.log(
-        `Filtered ${filtered.length} upcoming/ongoing events from ${eventsData.length} total events`,
+        `Filtered ${filtered.length} upcoming/ongoing events from ${eventsData.length} total events`
       );
       return filtered;
     }
 
-    console.log("DEBUG: Returning all events:", eventsData.length);
+    console.log('DEBUG: Returning all events:', eventsData.length);
     return eventsData;
   }, [eventsData, eventFilter]);
 
   useEffect(() => {
     if (error) {
-      console.error("DiscoverScreen: React Query error", error);
+      console.error('DiscoverScreen: React Query error', error);
     }
   }, [isLoading, eventsData, error]);
 
@@ -124,12 +124,12 @@ export default function DiscoverScreen() {
       if (response.ok) {
         const data = await response.json();
         const starredEventIds = new Set(
-          (data.events || []).map((event: any) => event.id),
+          (data.events || []).map((event: any) => event.id)
         );
         setStarredEvents(starredEventIds);
       }
     } catch (error) {
-      console.warn("Failed to load starred events:", error);
+      console.warn('Failed to load starred events:', error);
     }
   }, [user, isDemoMode, demoStarredEvents]);
 
@@ -144,7 +144,7 @@ export default function DiscoverScreen() {
       if (user) {
         loadStarredEvents();
       }
-    }, [user, loadStarredEvents]),
+    }, [user, loadStarredEvents])
   );
 
   const onRefresh = async () => {
@@ -154,12 +154,12 @@ export default function DiscoverScreen() {
   };
 
   const handleEventPress = (eventId: number) => {
-    navigation.navigate("EventDetail", { eventId });
+    navigation.navigate('EventDetail', { eventId });
   };
 
   const handleStarPress = async (eventId: number) => {
     if (!user) {
-      Alert.alert("Sign In Required", "Please sign in to star events.");
+      Alert.alert('Sign In Required', 'Please sign in to star events.');
       return;
     }
 
@@ -173,14 +173,14 @@ export default function DiscoverScreen() {
 
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error("No authentication token found");
+        throw new Error('No authentication token found');
       }
 
       const isCurrentlyStarred = starredEvents.has(eventId);
 
       if (isCurrentlyStarred) {
         await unstarEvent(eventId, authToken);
-        Alert.alert("Unstarred", "Event removed from your starred list.");
+        Alert.alert('Unstarred', 'Event removed from your starred list.');
       } else {
         await starEvent(eventId, authToken);
       }
@@ -188,10 +188,10 @@ export default function DiscoverScreen() {
       // Reload starred events from server to ensure consistency
       await loadStarredEvents();
     } catch (error: any) {
-      console.error("Star/unstar error:", error);
+      console.error('Star/unstar error:', error);
       const message =
-        error?.message || "Failed to update star status. Please try again.";
-      Alert.alert("Error", message);
+        error?.message || 'Failed to update star status. Please try again.';
+      Alert.alert('Error', message);
     }
   };
 
@@ -207,13 +207,13 @@ export default function DiscoverScreen() {
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateTitle}>No Events Found</Text>
       <Text style={styles.emptyStateDescription}>
-        {eventFilter === "upcoming"
-          ? "There are no upcoming events at the moment. Check back later!"
-          : "No events found. Check back later!"}
+        {eventFilter === 'upcoming'
+          ? 'There are no upcoming events at the moment. Check back later!'
+          : 'No events found. Check back later!'}
       </Text>
       <Button
         title="Create Event"
-        onPress={() => navigation.navigate("CreateEvent")}
+        onPress={() => navigation.navigate('CreateEvent')}
         style={styles.createButton}
       />
     </View>
@@ -252,7 +252,7 @@ export default function DiscoverScreen() {
     return (
       <TouchableOpacity
         style={styles.signInPrompt}
-        onPress={() => navigation.navigate("Auth")}
+        onPress={() => navigation.navigate('Auth')}
       >
         <View style={styles.signInContent}>
           <View style={styles.signInText}>
@@ -279,9 +279,11 @@ export default function DiscoverScreen() {
           <View>
             <View style={styles.header}>
               <Text style={styles.headerTitle}>
-                {allGroups.find(group => group.id === selectedGroupId)?.nickname || 
-                 allGroups.find(group => group.id === selectedGroupId)?.handle || 
-                 'Events'}
+                {allGroups.find((group) => group.id === selectedGroupId)
+                  ?.nickname ||
+                  allGroups.find((group) => group.id === selectedGroupId)
+                    ?.handle ||
+                  'Events'}
               </Text>
               <Text style={styles.headerSubtitle}>
                 Discover events in this community
@@ -292,14 +294,14 @@ export default function DiscoverScreen() {
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
-                    eventFilter === "upcoming" && styles.filterButtonActive,
+                    eventFilter === 'upcoming' && styles.filterButtonActive,
                   ]}
-                  onPress={() => setEventFilter("upcoming")}
+                  onPress={() => setEventFilter('upcoming')}
                 >
                   <Text
                     style={[
                       styles.filterButtonText,
-                      eventFilter === "upcoming" &&
+                      eventFilter === 'upcoming' &&
                         styles.filterButtonTextActive,
                     ]}
                   >
@@ -309,14 +311,14 @@ export default function DiscoverScreen() {
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
-                    eventFilter === "all" && styles.filterButtonActive,
+                    eventFilter === 'all' && styles.filterButtonActive,
                   ]}
-                  onPress={() => setEventFilter("all")}
+                  onPress={() => setEventFilter('all')}
                 >
                   <Text
                     style={[
                       styles.filterButtonText,
-                      eventFilter === "all" && styles.filterButtonTextActive,
+                      eventFilter === 'all' && styles.filterButtonTextActive,
                     ]}
                   >
                     All
@@ -343,7 +345,7 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
   listContainer: {
     flexGrow: 1,
@@ -353,41 +355,41 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: "#666",
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: '#666',
   },
   emptyState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   emptyStateTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 8,
   },
   emptyStateDescription: {
     fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+    color: '#666',
+    textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -396,20 +398,20 @@ const styles = StyleSheet.create({
   },
   errorState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 8,
   },
   errorDescription: {
     fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+    color: '#666',
+    textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -417,19 +419,19 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   signInPrompt: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     marginHorizontal: 8,
     marginBottom: 8,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   signInContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
   },
   signInText: {
@@ -437,25 +439,25 @@ const styles = StyleSheet.create({
   },
   signInTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 4,
   },
   signInDescription: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   debugText: {
     fontSize: 14,
-    color: "#ff0000",
-    fontWeight: "bold",
+    color: '#ff0000',
+    fontWeight: 'bold',
     padding: 10,
-    backgroundColor: "#ffff00",
+    backgroundColor: '#ffff00',
   },
   filterContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 16,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     padding: 2,
   },
@@ -464,17 +466,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
-    alignItems: "center",
+    alignItems: 'center',
   },
   filterButtonActive: {
     backgroundColor: colors.primary,
   },
   filterButtonText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
+    fontWeight: '500',
+    color: '#666',
   },
   filterButtonTextActive: {
-    color: "#fff",
+    color: '#fff',
   },
 });

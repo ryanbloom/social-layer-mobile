@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,17 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   useRoute,
   RouteProp,
   useFocusEffect,
   useNavigation,
-} from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
+} from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 
-import { RootStackParamList } from "../types";
+import { RootStackParamList } from '../types';
 import {
   apolloClient,
   GET_EVENT_DETAIL,
@@ -27,20 +27,20 @@ import {
   getAuthToken,
   starEvent,
   unstarEvent,
-} from "../services/api";
-import { gql } from "@apollo/client";
-import Constants from "expo-constants";
+} from '../services/api';
+import { gql } from '@apollo/client';
+import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
-import Button from "../components/Button";
-import Badge from "../components/Badge";
-import { formatEventDuration, getEventStatus } from "../utils/dateUtils";
-import { useAuth } from "../contexts/AuthContext";
-import { useGroup } from "../contexts/GroupContext";
-import { colors } from "../utils/colors";
-import { Share } from "react-native";
+import Button from '../components/Button';
+import Badge from '../components/Badge';
+import { formatEventDuration, getEventStatus } from '../utils/dateUtils';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
+import { colors } from '../utils/colors';
+import { Share } from 'react-native';
 
-type EventDetailRouteProp = RouteProp<RootStackParamList, "EventDetail">;
+type EventDetailRouteProp = RouteProp<RootStackParamList, 'EventDetail'>;
 
 export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
@@ -87,14 +87,14 @@ export default function EventDetailScreen() {
         const starredEvents = data.events || [];
         const eventIdInt = parseInt(eventId.toString(), 10);
         const isEventStarred = starredEvents.some(
-          (starredEvent: any) => starredEvent.id === eventIdInt,
+          (starredEvent: any) => starredEvent.id === eventIdInt
         );
         setIsStarred(isEventStarred);
       } else {
         setIsStarred(false);
       }
     } catch (error) {
-      console.warn("Failed to check if event is starred:", error);
+      console.warn('Failed to check if event is starred:', error);
       setIsStarred(false);
     }
   }, [user, eventId, isDemoMode, demoStarredEvents]);
@@ -105,20 +105,20 @@ export default function EventDetailScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["event", eventId],
+    queryKey: ['event', eventId],
     queryFn: async () => {
-      console.log("=== EventDetailScreen Debug ===");
-      console.log("Raw eventId from route params:", eventId);
-      console.log("eventId type:", typeof eventId);
-      console.log("eventId value:", JSON.stringify(eventId));
+      console.log('=== EventDetailScreen Debug ===');
+      console.log('Raw eventId from route params:', eventId);
+      console.log('eventId type:', typeof eventId);
+      console.log('eventId value:', JSON.stringify(eventId));
 
       const parsedId = parseInt(eventId.toString(), 10);
-      console.log("Parsed eventId:", parsedId);
-      console.log("Parsed eventId type:", typeof parsedId);
-      console.log("Is parsedId valid number?", !isNaN(parsedId));
+      console.log('Parsed eventId:', parsedId);
+      console.log('Parsed eventId type:', typeof parsedId);
+      console.log('Is parsedId valid number?', !isNaN(parsedId));
 
-      console.log("Making GraphQL query with variables:", { id: parsedId });
-      console.log("GraphQL query string:", GET_EVENT_DETAIL.loc?.source?.body);
+      console.log('Making GraphQL query with variables:', { id: parsedId });
+      console.log('GraphQL query string:', GET_EVENT_DETAIL.loc?.source?.body);
 
       // Try a simple query first to see if the event exists
       const SIMPLE_EVENT_QUERY = gql`
@@ -132,37 +132,37 @@ export default function EventDetailScreen() {
         }
       `;
 
-      console.log("Trying simple query first...");
+      console.log('Trying simple query first...');
 
       try {
         const simpleResult = await apolloClient.query({
           query: SIMPLE_EVENT_QUERY,
           variables: { id: parsedId },
-          fetchPolicy: "network-only",
-          errorPolicy: "all",
+          fetchPolicy: 'network-only',
+          errorPolicy: 'all',
         });
 
-        console.log("Simple query result:", simpleResult.data);
+        console.log('Simple query result:', simpleResult.data);
 
         if (!simpleResult.data.events_by_pk) {
-          console.log("Event not found with simple query");
+          console.log('Event not found with simple query');
           return null;
         }
 
-        console.log("Event exists, trying full query...");
+        console.log('Event exists, trying full query...');
 
         const result = await apolloClient.query({
           query: GET_EVENT_DETAIL,
           variables: { id: parsedId },
-          fetchPolicy: "network-only",
-          errorPolicy: "all", // Get partial data even if there are errors
+          fetchPolicy: 'network-only',
+          errorPolicy: 'all', // Get partial data even if there are errors
         });
 
-        console.log("Result data:", JSON.stringify(result.data, null, 2));
-        console.log("events_by_pk value:", result.data.events_by_pk);
+        console.log('Result data:', JSON.stringify(result.data, null, 2));
+        console.log('events_by_pk value:', result.data.events_by_pk);
 
         if (!result.data.events_by_pk) {
-          console.log("WARNING: events_by_pk is null/undefined");
+          console.log('WARNING: events_by_pk is null/undefined');
         }
 
         const eventData = result.data.events_by_pk;
@@ -174,9 +174,9 @@ export default function EventDetailScreen() {
 
         return eventData;
       } catch (error) {
-        console.log("GraphQL query failed with error:", error);
-        console.log("Error message:", error.message);
-        console.log("Error details:", JSON.stringify(error, null, 2));
+        console.log('GraphQL query failed with error:', error);
+        console.log('Error message:', error.message);
+        console.log('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
     },
@@ -188,7 +188,7 @@ export default function EventDetailScreen() {
       if (user) {
         checkIfEventIsStarred();
       }
-    }, [user, checkIfEventIsStarred]),
+    }, [user, checkIfEventIsStarred])
   );
 
   // Check if user is already attending this event
@@ -205,17 +205,17 @@ export default function EventDetailScreen() {
     return event.participants?.some(
       (participant: any) =>
         participant.profile.id === user.id &&
-        ["applied", "attending", "checked"].includes(participant.status),
+        ['applied', 'attending', 'checked'].includes(participant.status)
     );
   })();
 
   const handleRSVP = async () => {
     if (!user) {
-      Alert.alert("Sign In Required", "Please sign in to RSVP to events.", [
-        { text: "Cancel", style: "cancel" },
+      Alert.alert('Sign In Required', 'Please sign in to RSVP to events.', [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Sign In",
-          onPress: () => navigation.navigate("Auth" as never),
+          text: 'Sign In',
+          onPress: () => navigation.navigate('Auth' as never),
         },
       ]);
       return;
@@ -231,37 +231,37 @@ export default function EventDetailScreen() {
         toggleDemoAttendance(eventIdInt);
         if (isUserAttending) {
           Alert.alert(
-            "Canceled",
-            "You have canceled your RSVP for this event.",
+            'Canceled',
+            'You have canceled your RSVP for this event.'
           );
         } else {
-          Alert.alert("Success", "Successfully RSVP'd to event!");
+          Alert.alert('Success', "Successfully RSVP'd to event!");
         }
         return;
       }
 
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error("No authentication token found");
+        throw new Error('No authentication token found');
       }
 
       if (isUserAttending) {
         // Cancel attendance
         await cancelAttendance(eventIdInt, authToken);
-        Alert.alert("Canceled", "You have canceled your RSVP for this event.");
+        Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
       } else {
         // Attend event
         await attendEvent(eventIdInt, authToken);
-        Alert.alert("Success", "Successfully RSVP'd to event!");
+        Alert.alert('Success', "Successfully RSVP'd to event!");
       }
 
       // Refresh event data to show updated participant list
       await refetch();
     } catch (error: any) {
-      console.error("RSVP error:", error);
+      console.error('RSVP error:', error);
       const message =
-        error?.message || "Failed to update RSVP. Please try again.";
-      Alert.alert("Error", message);
+        error?.message || 'Failed to update RSVP. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setIsRSVPing(false);
     }
@@ -272,9 +272,11 @@ export default function EventDetailScreen() {
 
     try {
       // Find the group info for the event
-      const eventGroup = allGroups.find(group => group.id === event.group?.id);
+      const eventGroup = allGroups.find(
+        (group) => group.id === event.group?.id
+      );
       const groupHandle = eventGroup?.handle || event.group?.handle || 'event';
-      
+
       // Create dynamic share URL based on the group
       const url = `https://${groupHandle}.sola.day/event/detail/${event.id}`;
 
@@ -282,18 +284,18 @@ export default function EventDetailScreen() {
         url: url,
       });
     } catch (error) {
-      console.error("Share error:", error);
-      Alert.alert("Error", "Failed to share event. Please try again.");
+      console.error('Share error:', error);
+      Alert.alert('Error', 'Failed to share event. Please try again.');
     }
   };
 
   const handleStarToggle = async () => {
     if (!user) {
-      Alert.alert("Sign In Required", "Please sign in to star events.", [
-        { text: "Cancel", style: "cancel" },
+      Alert.alert('Sign In Required', 'Please sign in to star events.', [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Sign In",
-          onPress: () => navigation.navigate("Auth" as never),
+          text: 'Sign In',
+          onPress: () => navigation.navigate('Auth' as never),
         },
       ]);
       return;
@@ -315,7 +317,7 @@ export default function EventDetailScreen() {
 
       const authToken = await getAuthToken();
       if (!authToken) {
-        throw new Error("No authentication token found");
+        throw new Error('No authentication token found');
       }
 
       if (isStarred) {
@@ -329,10 +331,10 @@ export default function EventDetailScreen() {
       // Reload star status from server to ensure consistency
       await checkIfEventIsStarred();
     } catch (error: any) {
-      console.error("Star/unstar error:", error);
+      console.error('Star/unstar error:', error);
       const message =
-        error?.message || "Failed to update star status. Please try again.";
-      Alert.alert("Error", message);
+        error?.message || 'Failed to update star status. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setIsStarring(false);
     }
@@ -367,7 +369,7 @@ export default function EventDetailScreen() {
   const duration = formatEventDuration(
     event.start_time,
     event.end_time,
-    event.timezone,
+    event.timezone
   );
 
   return (
@@ -381,7 +383,7 @@ export default function EventDetailScreen() {
           <Image
             source={{
               uri: event.cover_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.coverImage}
             resizeMode="cover"
@@ -398,7 +400,7 @@ export default function EventDetailScreen() {
                 <ActivityIndicator size="small" color={colors.text.white} />
               ) : (
                 <Ionicons
-                  name={isStarred ? "star" : "star-outline"}
+                  name={isStarred ? 'star' : 'star-outline'}
                   size={24}
                   color={isStarred ? colors.star : colors.text.white}
                 />
@@ -428,7 +430,7 @@ export default function EventDetailScreen() {
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Ionicons
-                  name={isStarred ? "star" : "star-outline"}
+                  name={isStarred ? 'star' : 'star-outline'}
                   size={24}
                   color={isStarred ? colors.accent : colors.text.secondary}
                 />
@@ -449,20 +451,20 @@ export default function EventDetailScreen() {
 
         {/* Badges */}
         <View style={styles.badgeContainer}>
-          {eventStatus === "past" && <Badge text="Past" variant="past" />}
-          {event.display === "private" && (
+          {eventStatus === 'past' && <Badge text="Past" variant="past" />}
+          {event.display === 'private' && (
             <Badge text="Private" variant="private" />
           )}
-          {event.status === "pending" && (
+          {event.status === 'pending' && (
             <Badge text="Pending" variant="pending" />
           )}
-          {event.status === "cancel" && (
+          {event.status === 'cancel' && (
             <Badge text="Canceled" variant="cancel" />
           )}
-          {eventStatus === "ongoing" && (
+          {eventStatus === 'ongoing' && (
             <Badge text="Ongoing" variant="ongoing" />
           )}
-          {eventStatus === "upcoming" && (
+          {eventStatus === 'upcoming' && (
             <Badge text="Upcoming" variant="upcoming" />
           )}
         </View>
@@ -475,7 +477,7 @@ export default function EventDetailScreen() {
           <Image
             source={{
               uri: event.owner.image_url,
-              cache: "force-cache",
+              cache: 'force-cache',
             }}
             style={styles.hostAvatar}
             resizeMode="cover"
@@ -504,16 +506,16 @@ export default function EventDetailScreen() {
           <View style={styles.infoSection}>
             <View style={styles.infoItem}>
               <Ionicons
-                name={event.meeting_url ? "videocam" : "location"}
+                name={event.meeting_url ? 'videocam' : 'location'}
                 size={24}
                 color={colors.primary}
               />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>
-                  {event.meeting_url ? "Online Event" : "Location"}
+                  {event.meeting_url ? 'Online Event' : 'Location'}
                 </Text>
                 <Text style={styles.infoValue}>
-                  {event.location || "Online"}
+                  {event.location || 'Online'}
                 </Text>
               </View>
             </View>
@@ -559,7 +561,7 @@ export default function EventDetailScreen() {
         {/* RSVP Button */}
         <View style={styles.rsvpContainer}>
           <Button
-            title={isUserAttending ? "Cancel RSVP" : "RSVP to Event"}
+            title={isUserAttending ? 'Cancel RSVP' : 'RSVP to Event'}
             onPress={handleRSVP}
             loading={isRSVPing}
             size="large"
@@ -567,8 +569,8 @@ export default function EventDetailScreen() {
           />
           <Text style={styles.rsvpNote}>
             {isUserAttending
-              ? "You are attending this event"
-              : "You can change your RSVP status at any time"}
+              ? 'You are attending this event'
+              : 'You can change your RSVP status at any time'}
           </Text>
         </View>
       </View>
@@ -586,8 +588,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 16,
@@ -596,13 +598,13 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 32,
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginTop: 16,
     marginBottom: 8,
@@ -610,30 +612,30 @@ const styles = StyleSheet.create({
   errorDescription: {
     fontSize: 16,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
   },
   imageContainer: {
-    position: "relative",
+    position: 'relative',
     height: 250,
   },
   coverImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   actionButtons: {
-    position: "absolute",
+    position: 'absolute',
     top: 16,
     right: 16,
-    flexDirection: "row",
+    flexDirection: 'row',
   },
   actionButton: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     width: 40,
     height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
   content: {
@@ -652,20 +654,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   badgeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 16,
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: 20,
     lineHeight: 36,
   },
   hostContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
@@ -682,7 +684,7 @@ const styles = StyleSheet.create({
   },
   hostName: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 2,
   },
@@ -694,8 +696,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   infoText: {
     flex: 1,
@@ -703,7 +705,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.secondary,
     marginBottom: 4,
   },
@@ -717,7 +719,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: 12,
   },
@@ -730,8 +732,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   tag: {
     backgroundColor: colors.background.tertiary,
@@ -746,10 +748,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   rsvpContainer: {
-    alignItems: "center",
+    alignItems: 'center',
   },
   rsvpButton: {
-    width: "100%",
+    width: '100%',
     marginBottom: 12,
   },
   cancelButton: {
@@ -758,6 +760,6 @@ const styles = StyleSheet.create({
   rsvpNote: {
     fontSize: 14,
     color: colors.text.tertiary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });
