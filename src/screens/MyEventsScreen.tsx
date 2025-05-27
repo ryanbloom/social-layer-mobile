@@ -177,17 +177,24 @@ export default function MyEventsScreen() {
         events = [];
     }
 
-    // Convert Event[] to EventWithJoinStatus[]
-    return events.map((event) => ({
-      ...event,
-      is_owner: event.owner.id === user.id,
-      is_attending:
-        activeTab === 'attending' ||
-        myEvents.attending.some((e) => e.id === event.id),
-      is_starred:
-        activeTab === 'starred' ||
-        myEvents.starred.some((e) => e.id === event.id),
-    }));
+    // Convert Event[] to EventWithJoinStatus[] and sort chronologically
+    return events
+      .map((event) => ({
+        ...event,
+        is_owner: event.owner.id === user.id,
+        is_attending:
+          activeTab === 'attending' ||
+          myEvents.attending.some((e) => e.id === event.id),
+        is_starred:
+          activeTab === 'starred' ||
+          myEvents.starred.some((e) => e.id === event.id),
+      }))
+      .sort((a, b) => {
+        // Sort by start_time in descending order (most recent/furthest in future first)
+        const dateA = new Date(a.start_time);
+        const dateB = new Date(b.start_time);
+        return dateB.getTime() - dateA.getTime();
+      });
   };
 
   const renderEmptyState = () => {
