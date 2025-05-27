@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,39 @@ import Button from '../components/Button';
 import GroupSelectionModal from '../components/GroupSelectionModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
+import { getAllGroups, getUserGroups, getAuthToken } from '../services/api';
 import { colors } from '../utils/colors';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
-  const { selectedGroupId, allGroups } = useGroup();
+  const { selectedGroupId, allGroups, setAllGroups, setUserGroups } = useGroup();
   const [showGroupModal, setShowGroupModal] = useState(false);
+
+  useEffect(() => {
+    loadGroupsIfNeeded();
+  }, []);
+
+  const loadGroupsIfNeeded = async () => {
+    // Only load if we don't have groups already
+    if (allGroups.length === 0) {
+      try {
+        const allGroupsData = await getAllGroups();
+        setAllGroups(allGroupsData);
+
+        // Load user groups if authenticated
+        if (user) {
+          const authToken = await getAuthToken();
+          if (authToken) {
+            const userGroupsData = await getUserGroups(authToken);
+            setUserGroups(userGroupsData);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+      }
+    }
+  };
 
   const handleSignIn = () => {
     navigation.navigate('Auth' as never);
