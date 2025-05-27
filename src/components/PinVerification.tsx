@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  Alert, 
+  ScrollView, 
+  KeyboardAvoidingView, 
+  Platform 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Button from './Button';
 import { colors } from '../utils/colors';
@@ -76,75 +85,87 @@ export default function PinVerification({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="mail-outline" size={60} color={colors.primary} />
-        <Text style={styles.title}>Check your email</Text>
-        <Text style={styles.subtitle}>
-          We sent a verification code to{'\n'}
-          <Text style={styles.email}>{email}</Text>
-        </Text>
-      </View>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <Ionicons name="mail-outline" size={60} color={colors.primary} />
+          <Text style={styles.title}>Check your email</Text>
+          <Text style={styles.subtitle}>
+            We sent a verification code to{'\n'}
+            <Text style={styles.email}>{email}</Text>
+          </Text>
+        </View>
 
-      <View style={styles.pinContainer}>
-        <Text style={styles.pinLabel}>Enter verification code</Text>
-        <TextInput
-          ref={inputRef}
-          style={styles.pinInput}
-          value={pin}
-          onChangeText={handlePinChange}
-          keyboardType="number-pad"
-          maxLength={5}
-          selectTextOnFocus
-          autoFocus
-        />
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          title="Verify"
-          onPress={() => handleVerify()}
-          loading={loading}
-          size="large"
-          style={styles.verifyButton}
-        />
-
-        <Button
-          title={
-            resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'
-          }
-          onPress={handleResend}
-          variant="ghost"
-          disabled={resendCooldown > 0}
-          style={styles.resendButton}
-        />
-
-        {onCancel && (
-          <Button
-            title="Cancel"
-            onPress={onCancel}
-            variant="ghost"
-            style={styles.cancelButton}
+        <View style={styles.pinContainer}>
+          <Text style={styles.pinLabel}>Enter verification code</Text>
+          <TextInput
+            ref={inputRef}
+            style={styles.pinInput}
+            value={pin}
+            onChangeText={handlePinChange}
+            keyboardType="number-pad"
+            maxLength={5}
+            selectTextOnFocus
+            autoFocus
           />
-        )}
-      </View>
+        </View>
 
-      <Text style={styles.helpText}>
-        Didn't receive the code? Check your spam folder or try resending.
-      </Text>
-    </View>
+        <View style={styles.actions}>
+          <Button
+            title="Verify"
+            onPress={() => handleVerify()}
+            loading={loading}
+            size="large"
+            style={styles.verifyButton}
+          />
+
+          <Button
+            title={
+              resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'
+            }
+            onPress={handleResend}
+            variant="ghost"
+            disabled={resendCooldown > 0}
+            style={styles.resendButton}
+          />
+
+          {onCancel && (
+            <Button
+              title="Cancel"
+              onPress={onCancel}
+              variant="ghost"
+              style={styles.cancelButton}
+            />
+          )}
+        </View>
+
+        <Text style={styles.helpText}>
+          Didn't receive the code? Check your spam folder or try resending.
+        </Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: 32,
-    justifyContent: 'space-between',
+    paddingTop: 60,
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
+    marginBottom: 40,
   },
   title: {
     fontSize: 24,
@@ -164,9 +185,8 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   pinContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 60,
   },
   pinLabel: {
     fontSize: 16,
@@ -190,6 +210,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
+    marginBottom: 24,
   },
   verifyButton: {
     marginBottom: 8,
