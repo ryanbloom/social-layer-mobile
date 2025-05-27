@@ -317,6 +317,29 @@ export default function EventDetailScreen() {
     }
   };
 
+  const handleOpenInBrowser = async () => {
+    if (!event) return;
+
+    try {
+      // Find the group info for the event
+      const eventGroup = allGroups.find(
+        (group) => group.id === event.group?.id
+      );
+      const groupHandle = eventGroup?.handle || event.group?.handle || 'event';
+
+      // Create dynamic URL based on the group
+      const url = `https://${groupHandle}.sola.day/event/detail/${event.id}`;
+
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error('Open in browser error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to open event in browser. Please try again.'
+      );
+    }
+  };
+
   const handleLocationPress = async (event: any) => {
     if (event.meeting_url) return;
 
@@ -485,6 +508,16 @@ export default function EventDetailScreen() {
                 />
               )}
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleOpenInBrowser}
+            >
+              <Ionicons
+                name="compass-outline"
+                size={24}
+                color={colors.text.white}
+              />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
               <Ionicons
                 name="share-outline"
@@ -514,6 +547,16 @@ export default function EventDetailScreen() {
                   color={isStarred ? colors.star : colors.text.secondary}
                 />
               )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButtonNoCover}
+              onPress={handleOpenInBrowser}
+            >
+              <Ionicons
+                name="compass-outline"
+                size={24}
+                color={colors.text.secondary}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButtonNoCover}
