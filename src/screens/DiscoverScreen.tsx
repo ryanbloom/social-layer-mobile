@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { EventWithJoinStatus, RootStackParamList } from '../types';
 import {
   apolloClient,
-  getEventsForGroup,
+  getEventsWithPagination,
   starEvent,
   unstarEvent,
   getAuthToken,
@@ -53,15 +53,18 @@ export default function DiscoverScreen() {
   );
 
   const {
-    data: eventsData,
+    data,
     isLoading,
     error,
     refetch,
-  } = useQuery({
-    queryKey: ['events', 'group', selectedGroupId],
-    queryFn: async () => {
-      console.log(selectedGroupId);
-      const { query, variables } = getEventsForGroup(selectedGroupId);
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['events', 'paginated', selectedGroupId],
+    queryFn: async ({ pageParam = 0 }) => {
+      console.log('Fetching page with offset:', pageParam);
+      const { query, variables } = getEventsWithPagination(selectedGroupId, 100, pageParam);
 
       try {
         const result = await apolloClient.query({
@@ -69,13 +72,41 @@ export default function DiscoverScreen() {
           variables,
           fetchPolicy: 'network-only',
         });
-        return result.data.events as EventWithJoinStatus[];
+        
+        const events = result.data.events as EventWithJoinStatus[];
+        console.log(`Fetched ${events.length} events for offset ${pageParam}`, events.map(e => e.id));
+        
+        return {
+          events,
+          nextOffset: events.length === 100 ? pageParam + 100 : undefined,
+        };
       } catch (error) {
         console.error('DiscoverScreen: Query failed', error);
         throw error;
       }
     },
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    initialPageParam: 0,
   });
+
+  // Flatten all pages of events and remove duplicates
+  const eventsData = useMemo(() => {
+    if (!data) return [];
+    
+    const allEvents = data.pages.flatMap(page => page.events);
+    
+    // Remove duplicates by event ID to prevent key conflicts
+    const uniqueEvents = allEvents.filter((event, index, array) => 
+      array.findIndex(e => e.id === event.id) === index
+    );
+    
+    console.log(`Total events before dedup: ${allEvents.length}, after dedup: ${uniqueEvents.length}`);
+    if (allEvents.length !== uniqueEvents.length) {
+      console.warn('Duplicate events detected and removed');
+    }
+    
+    return uniqueEvents;
+  }, [data]);
 
   // Filter events based on the selected filter
   const filteredEvents = useMemo(() => {
@@ -153,6 +184,13 @@ export default function DiscoverScreen() {
     setRefreshing(false);
   };
 
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      console.log('Loading more events...');
+      fetchNextPage();
+    }
+  };
+
   const handleEventPress = (eventId: number) => {
     navigation.navigate('EventDetail', { eventId });
   };
@@ -202,6 +240,17 @@ export default function DiscoverScreen() {
       onStarPress={() => handleStarPress(item.id)}
     />
   );
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null;
+    
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={styles.footerText}>Loading more events...</Text>
+      </View>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -329,6 +378,9 @@ export default function DiscoverScreen() {
             {renderSignInPrompt()}
           </View>
         }
+        ListFooterComponent={renderFooter}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -478,5 +530,16 @@ const styles = StyleSheet.create({
   },
   filterButtonTextActive: {
     color: '#fff',
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  footerText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: colors.text.secondary,
   },
 });

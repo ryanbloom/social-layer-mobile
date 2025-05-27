@@ -570,7 +570,7 @@ export default function EventDetailScreen() {
               hosts.push({
                 ...customHost,
                 isPrimary: true,
-                label: 'Custom Host',
+                label: 'Event Host',
               });
             } else if (groupHost) {
               hosts.push({

@@ -16,7 +16,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { EventWithJoinStatus, RootStackParamList } from '../types';
 import {
   apolloClient,
-  getEventsForGroup,
+  getEventsForCalendar,
   LOCAL_TIMEZONE,
   starEvent,
   unstarEvent,
@@ -93,15 +93,38 @@ export default function CalendarScreen() {
     }, [user, loadStarredEvents])
   );
 
-  // Load events
+  // Calculate date range for current month view to efficiently load only relevant events
+  const getMonthDateRange = useCallback((date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // Start from beginning of month, but include previous month's visible days
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay()); // Go back to Sunday
+    
+    // End at end of month, but include next month's visible days  
+    const lastDay = new Date(year, month + 1, 0);
+    const endDate = new Date(lastDay);
+    const remainingDays = 6 - lastDay.getDay(); // Days to reach Saturday
+    endDate.setDate(endDate.getDate() + remainingDays);
+    
+    return {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    };
+  }, []);
+
+  // Load events for current month view
   const {
     data: eventsData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['events', 'group', selectedGroupId],
+    queryKey: ['events', 'calendar', selectedGroupId, currentMonth.toISOString()],
     queryFn: async () => {
-      const { query, variables } = getEventsForGroup(selectedGroupId);
+      const { startDate, endDate } = getMonthDateRange(currentMonth);
+      const { query, variables } = getEventsForCalendar(selectedGroupId, startDate, endDate);
       const result = await apolloClient.query({
         query,
         variables,

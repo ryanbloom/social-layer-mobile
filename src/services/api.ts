@@ -264,11 +264,11 @@ export const updateProfile = async (
 
 // GraphQL Queries
 export const GET_EVENTS = gql`
-  query GetEvents($limit: Int, $offset: Int, $groupId: Int) {
+  query GetEvents($limit: Int, $offset: Int, $groupId: Int, $where: events_bool_exp) {
     events(
       limit: $limit
       offset: $offset
-      where: { group_id: { _eq: $groupId } }
+      where: $where
       order_by: { start_time: asc }
     ) {
       id
@@ -805,6 +805,51 @@ export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
       limit: 50,
       offset: 0,
       groupId: groupId,
+      where: { group_id: { _eq: groupId } },
+    },
+  };
+};
+
+// Calendar-specific function to get events for a date range
+export const getEventsForCalendar = (
+  groupId: number = DEFAULT_GROUP_ID,
+  startDate?: string,
+  endDate?: string
+) => {
+  // Build where clause for date filtering
+  const whereClause: any = { group_id: { _eq: groupId } };
+  
+  if (startDate && endDate) {
+    whereClause.start_time = {
+      _gte: startDate,
+      _lte: endDate,
+    };
+  }
+
+  return {
+    query: GET_EVENTS,
+    variables: {
+      limit: 1000, // Higher limit for calendar view to ensure we get all events in range
+      offset: 0,
+      groupId: groupId,
+      where: whereClause,
+    },
+  };
+};
+
+// Paginated function to get events for infinite scroll
+export const getEventsWithPagination = (
+  groupId: number = DEFAULT_GROUP_ID,
+  limit: number = 100,
+  offset: number = 0
+) => {
+  return {
+    query: GET_EVENTS,
+    variables: {
+      limit,
+      offset,
+      groupId,
+      where: { group_id: { _eq: groupId } },
     },
   };
 };
