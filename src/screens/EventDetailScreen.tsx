@@ -269,6 +269,11 @@ export default function EventDetailScreen() {
       return demoAttendingEvents.has(eventIdInt);
     }
 
+    console.log('Checking if user is attending:', {
+      userId: user.id,
+      participants: event.participants?.map(p => ({ id: p.profile.id, status: p.status }))
+    });
+
     return event.participants?.some(
       (participant: any) =>
         participant.profile.id === user.id &&
@@ -318,19 +323,24 @@ export default function EventDetailScreen() {
         isAttending: currentlyAttending,
         authToken,
         userId: user.id,
+      }, {
+        onSuccess: () => {
+          // Show success message based on the action taken
+          if (currentlyAttending) {
+            Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
+          } else {
+            Alert.alert('Success', "Successfully RSVP'd to event!");
+          }
+        },
+        onError: (error: any) => {
+          console.error('RSVP error:', error);
+          const message = error?.message || 'Failed to update RSVP. Please try again.';
+          Alert.alert('Error', message);
+        }
       });
-
-      // Show success message
-      if (currentlyAttending) {
-        Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
-      } else {
-        Alert.alert('Success', "Successfully RSVP'd to event!");
-      }
     } catch (error: any) {
-      console.error('RSVP error:', error);
-      const message =
-        error?.message || 'Failed to update RSVP. Please try again.';
-      Alert.alert('Error', message);
+      console.error('RSVP setup error:', error);
+      Alert.alert('Error', 'Failed to initialize RSVP. Please try again.');
     }
   };
 
@@ -648,6 +658,7 @@ export default function EventDetailScreen() {
               styles.rsvpButton,
               isUserAttending() && styles.cancelButton,
             ]}
+            textStyle={isUserAttending() ? styles.cancelButtonText : undefined}
           />
           <Text style={styles.rsvpNote}>
             {isUserAttending()
@@ -943,6 +954,9 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: colors.status.error,
+  },
+  cancelButtonText: {
+    color: colors.text.white,
   },
   rsvpNote: {
     fontSize: 14,

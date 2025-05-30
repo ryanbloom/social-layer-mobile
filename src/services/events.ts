@@ -437,16 +437,36 @@ export const useRSVPMutation = () => {
         };
       });
 
-      // Optimistically update event detail participant count
+      // Optimistically update event detail participant count and participants array
       queryClient.setQueryData(
         [QUERY_KEYS.EVENT_DETAIL, eventId],
         (old: any) => {
           if (!old) return old;
 
           const countChange = isAttending ? -1 : 1;
+          let newParticipants = [...(old.participants || [])];
+
+          if (isAttending) {
+            // Remove user from participants
+            newParticipants = newParticipants.filter(
+              (p: any) => p.profile.id !== userId
+            );
+          } else {
+            // Add user to participants (if they're not already there)
+            const userAlreadyExists = newParticipants.some(
+              (p: any) => p.profile.id === userId
+            );
+            if (!userAlreadyExists && userId) {
+              newParticipants.push({
+                profile: { id: userId },
+                status: 'attending',
+              });
+            }
+          }
 
           return {
             ...old,
+            participants: newParticipants,
             participants_count: Math.max(
               0,
               old.participants_count + countChange
@@ -471,15 +491,17 @@ export const useRSVPMutation = () => {
           context.previousEventDetail
         );
       }
-      console.error('RSVP mutation failed:', err);
-    },
-    onSettled: (data, error, variables) => {
-      // Always refetch to ensure consistency
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.MY_EVENTS, variables.userId],
-      });
+      // Also invalidate to ensure we have fresh data
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.EVENT_DETAIL, variables.eventId],
+      });
+      console.error('RSVP mutation failed:', err);
+    },
+    onSuccess: (data, variables) => {
+      // On successful mutation, we can trust our optimistic update
+      // Only invalidate myEvents to refresh the my events screen
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.MY_EVENTS, variables.userId],
       });
     },
   });
