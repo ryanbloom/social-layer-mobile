@@ -362,12 +362,13 @@ export default function CalendarScreen() {
       return (
         <View style={styles.eventsList}>
           {selectedDateEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              event={{ ...event, is_starred: starredEvents.has(event.id) }}
-              onPress={() => handleEventPress(event.id)}
-              onStarPress={() => handleStarPress(event.id)}
-            />
+            <View key={event.id} style={styles.eventCardContainer}>
+              <EventCard
+                event={{ ...event, is_starred: starredEvents.has(event.id) }}
+                onPress={() => handleEventPress(event.id)}
+                onStarPress={() => handleStarPress(event.id)}
+              />
+            </View>
           ))}
         </View>
       );
@@ -537,6 +538,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   eventsList: {
+    paddingHorizontal: 0,
+  },
+  eventCardContainer: {
     marginHorizontal: 8,
+    marginVertical: 8,
   },
 });

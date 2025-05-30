@@ -214,11 +214,13 @@ export default function DiscoverScreen() {
   };
 
   const renderEventCard = ({ item }: { item: EventWithJoinStatus }) => (
-    <EventCard
-      event={{ ...item, is_starred: isEventStarred(item.id) }}
-      onPress={() => handleEventPress(item.id)}
-      onStarPress={() => handleStarPress(item.id)}
-    />
+    <View style={styles.eventCardContainer}>
+      <EventCard
+        event={{ ...item, is_starred: isEventStarred(item.id) }}
+        onPress={() => handleEventPress(item.id)}
+        onStarPress={() => handleStarPress(item.id)}
+      />
+    </View>
   );
 
   const renderSectionHeader = ({
@@ -560,5 +562,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  eventCardContainer: {
+    marginHorizontal: 8,
+    marginVertical: 8,
   },
 });

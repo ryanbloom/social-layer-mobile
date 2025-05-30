@@ -249,12 +249,13 @@ export default function SearchScreen() {
           };
 
           return (
-            <EventCard
-              key={event.id}
-              event={eventWithStatus}
-              onPress={() => handleEventPress(event.id)}
-              onStarPress={() => handleStarPress(event.id)}
-            />
+            <View key={event.id} style={styles.eventCardContainer}>
+              <EventCard
+                event={eventWithStatus}
+                onPress={() => handleEventPress(event.id)}
+                onStarPress={() => handleStarPress(event.id)}
+              />
+            </View>
           );
         })}
       </ScrollView>
@@ -460,13 +461,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultsContent: {
-    padding: 16,
+    paddingHorizontal: 0,
+    paddingVertical: 16,
   },
   resultsCount: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.secondary,
     marginBottom: 16,
+    marginHorizontal: 16,
     textAlign: 'center',
+  },
+  eventCardContainer: {
+    marginHorizontal: 8,
+    marginVertical: 8,
   },
 });
