@@ -264,7 +264,12 @@ export const updateProfile = async (
 
 // GraphQL Queries
 export const GET_EVENTS = gql`
-  query GetEvents($limit: Int, $offset: Int, $groupId: Int, $where: events_bool_exp) {
+  query GetEvents(
+    $limit: Int
+    $offset: Int
+    $groupId: Int
+    $where: events_bool_exp
+  ) {
     events(
       limit: $limit
       offset: $offset
@@ -798,14 +803,25 @@ export const getMyEvents = async (
 };
 
 // Helper function to get events for a specific group
-export const getEventsForGroup = (groupId: number = DEFAULT_GROUP_ID) => {
+export const getEventsForGroup = (
+  groupId: number = DEFAULT_GROUP_ID,
+  upcomingOnly: boolean = false
+) => {
+  const whereClause: any = { group_id: { _eq: groupId } };
+
+  if (upcomingOnly) {
+    // Get events that haven't ended yet (including ongoing events)
+    const now = new Date();
+    whereClause.end_time = { _gte: now.toISOString() };
+  }
+
   return {
     query: GET_EVENTS,
     variables: {
       limit: 50,
       offset: 0,
       groupId: groupId,
-      where: { group_id: { _eq: groupId } },
+      where: whereClause,
     },
   };
 };
@@ -818,7 +834,7 @@ export const getEventsForCalendar = (
 ) => {
   // Build where clause for date filtering
   const whereClause: any = { group_id: { _eq: groupId } };
-  
+
   if (startDate && endDate) {
     whereClause.start_time = {
       _gte: startDate,
@@ -852,6 +868,159 @@ export const getEventsWithPagination = (
       where: { group_id: { _eq: groupId } },
     },
   };
+};
+
+// Search Events Function
+export const searchEvents = async (
+  searchQuery: string,
+  groupId: number = DEFAULT_GROUP_ID,
+  limit: number = 50
+): Promise<Event[]> => {
+  if (!searchQuery.trim()) {
+    return [];
+  }
+
+  try {
+    // Use GraphQL to search events with prioritized results
+    const SEARCH_EVENTS_QUERY = gql`
+      query SearchEvents($searchText: String!, $groupId: Int!, $limit: Int!) {
+        titleMatches: events(
+          where: { group_id: { _eq: $groupId }, title: { _ilike: $searchText } }
+          order_by: [{ start_time: asc }]
+          limit: $limit
+        ) {
+          id
+          title
+          start_time
+          end_time
+          timezone
+          location
+          cover_url
+          content
+          tags
+          participants_count
+          max_participant
+          status
+          display
+          owner {
+            id
+            handle
+            nickname
+            image_url
+          }
+          group {
+            id
+            handle
+            nickname
+            image_url
+          }
+          event_roles {
+            role
+            nickname
+            profile {
+              id
+              handle
+              nickname
+              image_url
+            }
+          }
+        }
+        contentMatches: events(
+          where: {
+            group_id: { _eq: $groupId }
+            title: { _nilike: $searchText }
+            content: { _ilike: $searchText }
+          }
+          order_by: [{ start_time: asc }]
+          limit: $limit
+        ) {
+          id
+          title
+          start_time
+          end_time
+          timezone
+          location
+          cover_url
+          content
+          tags
+          participants_count
+          max_participant
+          status
+          display
+          owner {
+            id
+            handle
+            nickname
+            image_url
+          }
+          group {
+            id
+            handle
+            nickname
+            image_url
+          }
+          event_roles {
+            role
+            nickname
+            profile {
+              id
+              handle
+              nickname
+              image_url
+            }
+          }
+        }
+      }
+    `;
+
+    const searchText = `%${searchQuery.trim()}%`;
+
+    const result = await apolloClient.query({
+      query: SEARCH_EVENTS_QUERY,
+      variables: {
+        searchText,
+        groupId,
+        limit,
+      },
+      fetchPolicy: 'network-only', // Always fetch fresh search results
+    });
+
+    // Combine results with title matches first
+    const titleMatches = result.data.titleMatches || [];
+    const contentMatches = result.data.contentMatches || [];
+
+    // Create a Set to avoid duplicates (in case an event matches both title and content)
+    const seenEventIds = new Set();
+    const events = [];
+
+    // Add title matches first
+    for (const event of titleMatches) {
+      if (!seenEventIds.has(event.id)) {
+        events.push(event);
+        seenEventIds.add(event.id);
+      }
+    }
+
+    // Then add content matches that haven't been added yet
+    for (const event of contentMatches) {
+      if (!seenEventIds.has(event.id)) {
+        events.push(event);
+        seenEventIds.add(event.id);
+      }
+    }
+
+    // Limit total results
+    const limitedEvents = events.slice(0, limit);
+
+    return limitedEvents as Event[];
+  } catch (error) {
+    console.error('searchEvents: Error searching events', {
+      error: error instanceof Error ? error.message : error,
+      searchQuery,
+      groupId,
+    });
+    return [];
+  }
 };
 
 // Export the default group ID for reference

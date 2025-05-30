@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -39,10 +40,11 @@ type CalendarScreenNavigationProp = StackNavigationProp<
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<CalendarScreenNavigationProp>();
   const { user } = useAuth();
   const { selectedGroupId } = useGroup();
+  const queryClient = useQueryClient();
 
   // Update navigation title when selected date changes
   useEffect(() => {
@@ -57,58 +59,72 @@ export default function CalendarScreen() {
     });
   }, [selectedDate, navigation]);
 
-  // Load starred events function
-  const loadStarredEvents = useCallback(async () => {
-    if (!user) return;
+  // Load starred events using React Query for better caching and performance
+  const { data: starredEventsData } = useQuery({
+    queryKey: ['starredEvents', user?.id],
+    queryFn: async () => {
+      if (!user) return new Set<number>();
 
-    try {
       const authToken = await getAuthToken();
-      if (!authToken) return;
+      if (!authToken) return new Set<number>();
 
       const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
       const response = await fetch(starredUrl);
       if (response.ok) {
         const data = await response.json();
-        const starredEventIds = new Set(
-          (data.events || []).map((event: any) => event.id)
-        );
-        setStarredEvents(starredEventIds);
+        return new Set((data.events || []).map((event: any) => event.id));
       }
+      return new Set<number>();
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 10 * 60 * 1000, // Keep in memory for 10 minutes
+  });
+
+  const starredEvents = starredEventsData || new Set<number>();
+
+  // Pull-to-refresh handler that clears all caches
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // Clear all React Query caches for events and related data
+      await queryClient.invalidateQueries({
+        queryKey: ['events'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['starredEvents'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['myEvents'],
+      });
+
+      // Clear Apollo Client cache completely and refetch active queries
+      await apolloClient.resetStore();
+
+      console.log('CalendarScreen: All caches cleared on refresh');
     } catch (error) {
-      console.warn('Failed to load starred events:', error);
+      console.error('CalendarScreen: Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
     }
-  }, [user]);
-
-  // Load starred events when user is available
-  useEffect(() => {
-    loadStarredEvents();
-  }, [loadStarredEvents]);
-
-  // Reload starred events when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      if (user) {
-        loadStarredEvents();
-      }
-    }, [user, loadStarredEvents])
-  );
+  }, [queryClient]);
 
   // Calculate date range for current month view to efficiently load only relevant events
   const getMonthDateRange = useCallback((date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    
+
     // Start from beginning of month, but include previous month's visible days
     const firstDay = new Date(year, month, 1);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay()); // Go back to Sunday
-    
-    // End at end of month, but include next month's visible days  
+
+    // End at end of month, but include next month's visible days
     const lastDay = new Date(year, month + 1, 0);
     const endDate = new Date(lastDay);
     const remainingDays = 6 - lastDay.getDay(); // Days to reach Saturday
     endDate.setDate(endDate.getDate() + remainingDays);
-    
+
     return {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -121,10 +137,19 @@ export default function CalendarScreen() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['events', 'calendar', selectedGroupId, currentMonth.toISOString()],
+    queryKey: [
+      'events',
+      'calendar',
+      selectedGroupId,
+      currentMonth.toISOString(),
+    ],
     queryFn: async () => {
       const { startDate, endDate } = getMonthDateRange(currentMonth);
-      const { query, variables } = getEventsForCalendar(selectedGroupId, startDate, endDate);
+      const { query, variables } = getEventsForCalendar(
+        selectedGroupId,
+        startDate,
+        endDate
+      );
       const result = await apolloClient.query({
         query,
         variables,
@@ -134,27 +159,39 @@ export default function CalendarScreen() {
     },
   });
 
-  // Helper function to check if a date has events
-  const getEventsForDate = (date: Date): EventWithJoinStatus[] => {
-    if (!eventsData) return [];
+  // Memoized events mapping for better performance
+  const eventsByDate = useMemo(() => {
+    if (!eventsData) return new Map<string, EventWithJoinStatus[]>();
 
-    const dateStr = date.toDateString();
-    return eventsData.filter((event) => {
-      const { date: eventDate } = formatEventTime(
-        event.start_time,
-        event.timezone,
-        LOCAL_TIMEZONE
-      );
+    const dateMap = new Map<string, EventWithJoinStatus[]>();
+
+    eventsData.forEach((event) => {
       const eventDateObj = new Date(event.start_time);
       // Use timezone-corrected date for comparison
       const correctedEventDate = new Date(
         eventDateObj.getTime() - 7 * 60 * 60 * 1000
       );
-      return correctedEventDate.toDateString() === dateStr;
-    });
-  };
+      const dateStr = correctedEventDate.toDateString();
 
-  const renderCalendarHeader = () => {
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, []);
+      }
+      dateMap.get(dateStr)!.push(event);
+    });
+
+    return dateMap;
+  }, [eventsData]);
+
+  // Optimized helper function to get events for a date
+  const getEventsForDate = useCallback(
+    (date: Date): EventWithJoinStatus[] => {
+      const dateStr = date.toDateString();
+      return eventsByDate.get(dateStr) || [];
+    },
+    [eventsByDate]
+  );
+
+  const renderCalendarHeader = useCallback(() => {
     const monthYear = currentMonth.toLocaleDateString('en-US', {
       month: 'long',
       year: 'numeric',
@@ -187,9 +224,9 @@ export default function CalendarScreen() {
         </TouchableOpacity>
       </View>
     );
-  };
+  }, [currentMonth]);
 
-  const renderWeekDays = () => {
+  const renderWeekDays = useCallback(() => {
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
@@ -201,9 +238,9 @@ export default function CalendarScreen() {
         ))}
       </View>
     );
-  };
+  }, []);
 
-  const renderCalendarDays = () => {
+  const renderCalendarDays = useCallback(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -261,23 +298,22 @@ export default function CalendarScreen() {
     }
 
     return <View style={styles.calendarDays}>{days}</View>;
-  };
+  }, [currentMonth, selectedDate, getEventsForDate]);
 
-  const renderSelectedDateEvents = () => {
-    const dateString = selectedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  // Memoize selected date events
+  const selectedDateEvents = useMemo(() => {
+    return getEventsForDate(selectedDate);
+  }, [selectedDate, getEventsForDate]);
 
-    const selectedDateEvents = getEventsForDate(selectedDate);
-
-    const handleEventPress = (eventId: number) => {
+  const handleEventPress = useCallback(
+    (eventId: number) => {
       navigation.navigate('EventDetail', { eventId });
-    };
+    },
+    [navigation]
+  );
 
-    const handleStarPress = async (eventId: number) => {
+  const handleStarPress = useCallback(
+    async (eventId: number) => {
       if (!user) {
         Alert.alert('Sign In Required', 'Please sign in to star events.');
         return;
@@ -298,62 +334,84 @@ export default function CalendarScreen() {
           await starEvent(eventId, authToken);
         }
 
-        // Reload starred events from server to ensure consistency
-        await loadStarredEvents();
+        // Invalidate starred events cache to refetch fresh data
+        await queryClient.invalidateQueries({
+          queryKey: ['starredEvents', user.id],
+        });
       } catch (error: any) {
         console.error('Star/unstar error:', error);
         const message =
           error?.message || 'Failed to update star status. Please try again.';
         Alert.alert('Error', message);
       }
-    };
+    },
+    [user, starredEvents, queryClient]
+  );
+
+  const renderSelectedDateEvents = useMemo(() => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading events...</Text>
+        </View>
+      );
+    }
+
+    if (selectedDateEvents.length > 0) {
+      return (
+        <View style={styles.eventsList}>
+          {selectedDateEvents.map((event) => (
+            <EventCard
+              key={event.id}
+              event={{ ...event, is_starred: starredEvents.has(event.id) }}
+              onPress={() => handleEventPress(event.id)}
+              onStarPress={() => handleStarPress(event.id)}
+            />
+          ))}
+        </View>
+      );
+    }
 
     return (
-      <>
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading events...</Text>
-          </View>
-        ) : selectedDateEvents.length > 0 ? (
-          <View style={styles.eventsList}>
-            {selectedDateEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={{ ...event, is_starred: starredEvents.has(event.id) }}
-                onPress={() => handleEventPress(event.id)}
-                onStarPress={() => handleStarPress(event.id)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.noEventsContainer}>
-            <Ionicons
-              name="calendar-outline"
-              size={48}
-              color={colors.text.tertiary}
-            />
-            <Text style={styles.noEventsText}>No events scheduled</Text>
-            <Text style={styles.noEventsSubtext}>
-              Create an event or check other dates
-            </Text>
-          </View>
-        )}
-      </>
+      <View style={styles.noEventsContainer}>
+        <Ionicons
+          name="calendar-outline"
+          size={48}
+          color={colors.text.tertiary}
+        />
+        <Text style={styles.noEventsText}>No events scheduled</Text>
+        <Text style={styles.noEventsSubtext}>
+          Create an event or check other dates
+        </Text>
+      </View>
     );
-  };
+  }, [
+    isLoading,
+    selectedDateEvents,
+    starredEvents,
+    handleEventPress,
+    handleStarPress,
+  ]);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+        />
+      }
     >
       <View style={styles.calendarContainer}>
         {renderCalendarHeader()}
         {renderWeekDays()}
         {renderCalendarDays()}
       </View>
-      {renderSelectedDateEvents()}
+      {renderSelectedDateEvents}
     </ScrollView>
   );
 }

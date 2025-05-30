@@ -4,29 +4,29 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  SectionList,
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
 import { EventWithJoinStatus, RootStackParamList } from '../types';
+import { getAuthToken, apolloClient } from '../services/api';
 import {
-  apolloClient,
-  getEventsWithPagination,
-  starEvent,
-  unstarEvent,
-  getAuthToken,
-} from '../services/api';
+  useEvents,
+  useInfiniteEvents,
+  useStarEventMutation,
+} from '../services/events';
 import EventCard from '../components/EventCard';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import { getEventStatus } from '../utils/dateUtils';
+import { getEventStatus, groupEventsByDate } from '../utils/dateUtils';
 import { colors } from '../utils/colors';
 import Constants from 'expo-constants';
 
@@ -42,10 +42,11 @@ type EventFilter = 'upcoming' | 'all';
 export default function DiscoverScreen() {
   const navigation = useNavigation<DiscoverScreenNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
-  const [starredEvents, setStarredEvents] = useState<Set<number>>(new Set());
+  const starMutation = useStarEventMutation();
   const [eventFilter, setEventFilter] = useState<EventFilter>('upcoming');
   const { user, isDemoMode, demoStarredEvents, toggleDemoStar } = useAuth();
   const { selectedGroupId, allGroups } = useGroup();
+  const queryClient = useQueryClient();
 
   console.log(
     'DEBUG DiscoverScreen: User in DiscoverScreen:',
@@ -53,135 +54,117 @@ export default function DiscoverScreen() {
   );
 
   const {
-    data,
+    data: infiniteEventsData,
     isLoading,
     error,
-    refetch,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['events', 'paginated', selectedGroupId],
-    queryFn: async ({ pageParam = 0 }) => {
-      console.log('Fetching page with offset:', pageParam);
-      const { query, variables } = getEventsWithPagination(selectedGroupId, 100, pageParam);
+    refetch,
+  } = useInfiniteEvents(selectedGroupId, eventFilter === 'upcoming');
 
-      try {
-        const result = await apolloClient.query({
-          query,
-          variables,
-          fetchPolicy: 'network-only',
-        });
-        
-        const events = result.data.events as EventWithJoinStatus[];
-        console.log(`Fetched ${events.length} events for offset ${pageParam}`, events.map(e => e.id));
-        
-        return {
-          events,
-          nextOffset: events.length === 100 ? pageParam + 100 : undefined,
-        };
-      } catch (error) {
-        console.error('DiscoverScreen: Query failed', error);
-        throw error;
-      }
-    },
-    getNextPageParam: (lastPage) => lastPage.nextOffset,
-    initialPageParam: 0,
-  });
-
-  // Flatten all pages of events and remove duplicates
-  const eventsData = useMemo(() => {
-    if (!data) return [];
-    
-    const allEvents = data.pages.flatMap(page => page.events);
-    
-    // Remove duplicates by event ID to prevent key conflicts
-    const uniqueEvents = allEvents.filter((event, index, array) => 
-      array.findIndex(e => e.id === event.id) === index
-    );
-    
-    console.log(`Total events before dedup: ${allEvents.length}, after dedup: ${uniqueEvents.length}`);
-    if (allEvents.length !== uniqueEvents.length) {
-      console.warn('Duplicate events detected and removed');
-    }
-    
-    return uniqueEvents;
-  }, [data]);
-
-  // Filter events based on the selected filter
+  // Flatten infinite query data and deduplicate
   const filteredEvents = useMemo(() => {
-    if (!eventsData) {
-      return [];
-    }
+    console.log(
+      'filteredEvents useMemo running, infiniteEventsData:',
+      infiniteEventsData?.pages?.length,
+      'eventFilter:',
+      eventFilter
+    );
 
-    if (eventFilter === 'upcoming') {
-      const filtered = eventsData.filter((event) => {
+    if (!infiniteEventsData?.pages) return [];
+
+    // Flatten all pages into a single array
+    const allEvents = infiniteEventsData.pages.flatMap((page) => page.events);
+
+    // Deduplicate events by ID to prevent duplicate keys
+    const uniqueEvents = allEvents.reduce(
+      (acc, event) => {
+        if (!acc.find((e) => e.id === event.id)) {
+          acc.push(event);
+        }
+        return acc;
+      },
+      [] as typeof allEvents
+    );
+
+    // Let's double-check the filtering by testing a few events
+    if (eventFilter === 'upcoming' && uniqueEvents.length > 0) {
+      const now = new Date();
+      console.log('Current time:', now.toISOString());
+
+      // Check first 3 events
+      uniqueEvents.slice(0, 3).forEach((event, index) => {
         const status = getEventStatus(event.start_time, event.end_time);
-        console.log(`Event "${event.title}" status: ${status}`);
-        return status === 'upcoming' || status === 'ongoing';
+        console.log(
+          `Event ${index + 1} "${event.title}": ${status} (start: ${event.start_time}, end: ${event.end_time})`
+        );
       });
-      console.log(
-        `Filtered ${filtered.length} upcoming/ongoing events from ${eventsData.length} total events`
-      );
-      return filtered;
     }
 
-    console.log('DEBUG: Returning all events:', eventsData.length);
-    return eventsData;
-  }, [eventsData, eventFilter]);
+    // When eventFilter is 'upcoming', the query already filtered for upcoming events
+    // When eventFilter is 'all', we show all events returned
+    console.log(
+      'Using events as-is from query, count:',
+      uniqueEvents.length,
+      'original:',
+      allEvents.length
+    );
+    return uniqueEvents;
+  }, [infiniteEventsData, eventFilter]);
+
+  // Group events by date for upcoming view
+  const groupedEvents = useMemo(() => {
+    if (eventFilter === 'upcoming' && filteredEvents.length > 0) {
+      return groupEventsByDate(filteredEvents);
+    }
+    return null;
+  }, [filteredEvents, eventFilter]);
 
   useEffect(() => {
     if (error) {
       console.error('DiscoverScreen: React Query error', error);
     }
-  }, [isLoading, eventsData, error]);
+  }, [isLoading, infiniteEventsData, error]);
 
-  // Load starred events function
-  const loadStarredEvents = useCallback(async () => {
-    if (!user) return;
-
-    // Handle demo mode
-    if (isDemoMode) {
-      setStarredEvents(demoStarredEvents);
-      return;
-    }
-
-    try {
-      const authToken = await getAuthToken();
-      if (!authToken) return;
-
-      const starredUrl = `${API_URL}/event/my_event_list?collection=my_stars&auth_token=${authToken}`;
-      const response = await fetch(starredUrl);
-      if (response.ok) {
-        const data = await response.json();
-        const starredEventIds = new Set(
-          (data.events || []).map((event: any) => event.id)
-        );
-        setStarredEvents(starredEventIds);
+  // Check if event is starred from demo mode or cached data
+  const isEventStarred = useCallback(
+    (eventId: number) => {
+      if (isDemoMode) {
+        return demoStarredEvents.has(eventId);
       }
-    } catch (error) {
-      console.warn('Failed to load starred events:', error);
-    }
-  }, [user, isDemoMode, demoStarredEvents]);
-
-  // Load starred events when user is available
-  useEffect(() => {
-    loadStarredEvents();
-  }, [loadStarredEvents]);
-
-  // Reload starred events when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      if (user) {
-        loadStarredEvents();
-      }
-    }, [user, loadStarredEvents])
+      // This will be handled by the optimistic updates in the mutation
+      return false;
+    },
+    [isDemoMode, demoStarredEvents]
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    try {
+      // Clear all React Query caches for events and related data
+      await queryClient.invalidateQueries({
+        queryKey: ['events'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['starredEvents'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['myEvents'],
+      });
+
+      // Clear Apollo Client cache completely and refetch active queries
+      await apolloClient.resetStore();
+
+      // Refetch current infinite query
+      await refetch();
+
+      console.log('DiscoverScreen: All caches cleared on refresh');
+    } catch (error) {
+      console.error('DiscoverScreen: Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleLoadMore = () => {
@@ -205,7 +188,6 @@ export default function DiscoverScreen() {
       // Handle demo mode
       if (isDemoMode) {
         toggleDemoStar(eventId);
-        await loadStarredEvents();
         return;
       }
 
@@ -214,17 +196,15 @@ export default function DiscoverScreen() {
         throw new Error('No authentication token found');
       }
 
-      const isCurrentlyStarred = starredEvents.has(eventId);
+      const isCurrentlyStarred = isEventStarred(eventId);
 
-      if (isCurrentlyStarred) {
-        await unstarEvent(eventId, authToken);
-        Alert.alert('Unstarred', 'Event removed from your starred list.');
-      } else {
-        await starEvent(eventId, authToken);
-      }
-
-      // Reload starred events from server to ensure consistency
-      await loadStarredEvents();
+      // Use optimistic mutation for instant UI updates
+      starMutation.mutate({
+        eventId,
+        isStarred: isCurrentlyStarred,
+        authToken,
+        userId: user.id,
+      });
     } catch (error: any) {
       console.error('Star/unstar error:', error);
       const message =
@@ -235,15 +215,25 @@ export default function DiscoverScreen() {
 
   const renderEventCard = ({ item }: { item: EventWithJoinStatus }) => (
     <EventCard
-      event={{ ...item, is_starred: starredEvents.has(item.id) }}
+      event={{ ...item, is_starred: isEventStarred(item.id) }}
       onPress={() => handleEventPress(item.id)}
       onStarPress={() => handleStarPress(item.id)}
     />
   );
 
+  const renderSectionHeader = ({
+    section,
+  }: {
+    section: { dateLabel: string };
+  }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{section.dateLabel}</Text>
+    </View>
+  );
+
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
-    
+
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
@@ -260,11 +250,6 @@ export default function DiscoverScreen() {
           ? 'There are no upcoming events at the moment. Check back later!'
           : 'No events found. Check back later!'}
       </Text>
-      <Button
-        title="Create Event"
-        onPress={() => navigation.navigate('CreateEvent')}
-        style={styles.createButton}
-      />
     </View>
   );
 
@@ -282,7 +267,7 @@ export default function DiscoverScreen() {
     </View>
   );
 
-  if (isLoading && !eventsData) {
+  if (isLoading && !infiniteEventsData) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -316,80 +301,102 @@ export default function DiscoverScreen() {
     );
   };
 
+  const renderHeader = () => (
+    <View>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>
+          {allGroups.find((group) => group.id === selectedGroupId)?.nickname ||
+            allGroups.find((group) => group.id === selectedGroupId)?.handle ||
+            'Events'}
+        </Text>
+        <Text style={styles.headerSubtitle}>
+          Discover events in this community
+        </Text>
+
+        {/* Event Filter Toggle */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              eventFilter === 'upcoming' && styles.filterButtonActive,
+            ]}
+            onPress={() => setEventFilter('upcoming')}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                eventFilter === 'upcoming' && styles.filterButtonTextActive,
+              ]}
+            >
+              Upcoming
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              eventFilter === 'all' && styles.filterButtonActive,
+            ]}
+            onPress={() => setEventFilter('all')}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                eventFilter === 'all' && styles.filterButtonTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      {renderSignInPrompt()}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={filteredEvents}
-        renderItem={renderEventCard}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>
-                {allGroups.find((group) => group.id === selectedGroupId)
-                  ?.nickname ||
-                  allGroups.find((group) => group.id === selectedGroupId)
-                    ?.handle ||
-                  'Events'}
-              </Text>
-              <Text style={styles.headerSubtitle}>
-                Discover events in this community
-              </Text>
-
-              {/* Event Filter Toggle */}
-              <View style={styles.filterContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.filterButton,
-                    eventFilter === 'upcoming' && styles.filterButtonActive,
-                  ]}
-                  onPress={() => setEventFilter('upcoming')}
-                >
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      eventFilter === 'upcoming' &&
-                        styles.filterButtonTextActive,
-                    ]}
-                  >
-                    Upcoming
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.filterButton,
-                    eventFilter === 'all' && styles.filterButtonActive,
-                  ]}
-                  onPress={() => setEventFilter('all')}
-                >
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      eventFilter === 'all' && styles.filterButtonTextActive,
-                    ]}
-                  >
-                    All
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {renderSignInPrompt()}
-          </View>
-        }
-        ListFooterComponent={renderFooter}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-          />
-        }
-        ListEmptyComponent={renderEmptyState}
-      />
+      {eventFilter === 'upcoming' && groupedEvents ? (
+        <SectionList
+          sections={groupedEvents}
+          renderItem={renderEventCard}
+          renderSectionHeader={renderSectionHeader}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+        />
+      ) : (
+        <FlatList
+          data={filteredEvents}
+          renderItem={renderEventCard}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+        />
+      )}
     </View>
   );
 }
@@ -541,5 +548,17 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     color: colors.text.secondary,
+  },
+  sectionHeader: {
+    backgroundColor: colors.background.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
   },
 });

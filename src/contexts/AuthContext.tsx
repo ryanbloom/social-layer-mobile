@@ -15,6 +15,7 @@ import {
   sendEmailPin,
   verifyEmailPin,
 } from '../services/api';
+import { starredEventsCache, attendingEventsCache } from '../services/caching';
 import { Profile } from '../types';
 
 interface AuthContextType {
@@ -234,6 +235,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setActionLoading(true);
       await removeAuthToken();
+
+      // Clear user-specific caches
+      if (user?.id) {
+        await starredEventsCache.clear(user.id);
+        await attendingEventsCache.clear(user.id);
+      }
+
       setUser(null);
       setIsDemoMode(false);
       setDemoStarredEvents(new Set());

@@ -134,3 +134,36 @@ export function getRelativeDate(
     });
   }
 }
+
+export function groupEventsByDate<T extends { start_time: string }>(
+  events: T[],
+  localTimezone: string = 'America/Los_Angeles'
+): { date: string; dateLabel: string; data: T[] }[] {
+  const groups: { [key: string]: T[] } = {};
+
+  events.forEach((event) => {
+    const correctedDate = correctTime(new Date(event.start_time));
+    const dateKey = correctedDate.toDateString();
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(event);
+  });
+
+  return Object.keys(groups)
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    .map((dateKey) => {
+      const date = new Date(dateKey);
+      const dateLabel = getRelativeDate(date.toISOString(), localTimezone);
+
+      return {
+        date: dateKey,
+        dateLabel,
+        data: groups[dateKey].sort(
+          (a, b) =>
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        ),
+      };
+    });
+}

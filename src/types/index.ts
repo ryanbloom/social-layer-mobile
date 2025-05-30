@@ -262,6 +262,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Discover: undefined;
+  Search: undefined;
   Calendar: undefined;
   MyEvents: undefined;
   Profile: undefined;

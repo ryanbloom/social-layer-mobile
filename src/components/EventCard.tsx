@@ -14,6 +14,14 @@ interface EventCardProps {
   onStarPress?: () => void;
 }
 
+function attendanceBadge(event: EventWithJoinStatus, status: string) {
+  if (event.is_attending && status === 'past') {
+    return <Badge text="Attended" variant="joining" />;
+  } else if (event.is_attending) {
+    return <Badge text="Attending" variant="joining" />;
+  }
+}
+
 export default function EventCard({
   event,
   onPress,
@@ -68,7 +76,7 @@ export default function EventCard({
             <Badge text="Upcoming" variant="upcoming" />
           )}
           {event.is_owner && <Badge text="Hosting" variant="hosting" />}
-          {event.is_attending && <Badge text="Attended" variant="joining" />}
+          {attendanceBadge(event, eventStatus)}
         </View>
 
         {/* Title */}

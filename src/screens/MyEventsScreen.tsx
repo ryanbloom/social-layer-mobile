@@ -10,17 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import {
-  getMyEvents,
-  getAuthToken,
-  starEvent,
-  unstarEvent,
-  apolloClient,
-  getEventsForGroup,
-} from '../services/api';
+import { getAuthToken } from '../services/api';
+import { useMyEvents, useStarEventMutation } from '../services/events';
 import Button from '../components/Button';
 import EventCard from '../components/EventCard';
 import { Event, EventWithJoinStatus } from '../types';
@@ -40,6 +33,8 @@ export default function MyEventsScreen() {
   } = useAuth();
   const { selectedGroupId } = useGroup();
 
+  const starMutation = useStarEventMutation();
+
   const handleStarPress = async (eventId: number) => {
     if (!user) {
       Alert.alert('Error', 'Unable to update star status.');
@@ -50,7 +45,6 @@ export default function MyEventsScreen() {
       // Handle demo mode
       if (isDemoMode) {
         toggleDemoStar(eventId);
-        await refetch();
         return;
       }
 
@@ -66,14 +60,13 @@ export default function MyEventsScreen() {
 
       const isCurrentlyStarred = myEvents.starred.some((e) => e.id === eventId);
 
-      if (isCurrentlyStarred) {
-        await unstarEvent(eventId, authToken);
-      } else {
-        await starEvent(eventId, authToken);
-      }
-
-      // Refetch events to get updated starred status
-      await refetch();
+      // Use optimistic mutation for instant UI updates
+      starMutation.mutate({
+        eventId,
+        isStarred: isCurrentlyStarred,
+        authToken,
+        userId: user.id,
+      });
     } catch (error: any) {
       console.error('Star/unstar error:', error);
       const message =
@@ -82,58 +75,13 @@ export default function MyEventsScreen() {
     }
   };
 
-  // Fetch user's events when authenticated
+  // Fetch user's events with optimized caching
   const {
     data: myEvents,
     isLoading,
     error,
     refetch,
-  } = useQuery({
-    queryKey: [
-      'myEvents',
-      user?.id,
-      isDemoMode,
-      Array.from(demoStarredEvents).sort(),
-      Array.from(demoAttendingEvents).sort(),
-    ],
-    queryFn: async () => {
-      const authToken = await getAuthToken();
-      if (!authToken) {
-        throw new Error('No authentication token found');
-      }
-
-      // Handle demo mode - get group events and filter them
-      if (isDemoMode) {
-        const { query, variables } = getEventsForGroup(selectedGroupId);
-        const result = await apolloClient.query({
-          query,
-          variables,
-          fetchPolicy: 'network-only',
-        });
-
-        const allGroupEvents = result.data.events || [];
-
-        // Filter events based on demo state
-        const attendingEvents = allGroupEvents.filter((event: Event) =>
-          demoAttendingEvents.has(event.id)
-        );
-
-        const starredEvents = allGroupEvents.filter((event: Event) =>
-          demoStarredEvents.has(event.id)
-        );
-
-        return {
-          attending: attendingEvents,
-          hosting: [],
-          starred: starredEvents,
-        };
-      }
-
-      return getMyEvents(authToken);
-    },
-    enabled: !!user, // Only run query when user is authenticated
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-  });
+  } = useMyEvents(user?.id, isDemoMode, demoStarredEvents, demoAttendingEvents);
 
   const handleSignIn = () => {
     navigation.navigate('Auth' as never);
@@ -256,7 +204,7 @@ export default function MyEventsScreen() {
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => refetch()}
+            onPress={() => refetch?.()}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
@@ -292,10 +240,7 @@ export default function MyEventsScreen() {
               console.log('Event ID type:', typeof event.id);
               console.log('Event title:', event.title);
               console.log('Full event object:', JSON.stringify(event, null, 2));
-              navigation.navigate(
-                'EventDetail' as never,
-                { eventId: event.id } as never
-              );
+              navigation.navigate('EventDetail' as any, { eventId: event.id });
             }}
             onStarPress={() => handleStarPress(event.id)}
           />

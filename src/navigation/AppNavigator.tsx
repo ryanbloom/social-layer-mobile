@@ -10,6 +10,7 @@ import { colors } from '../utils/colors';
 
 import { RootStackParamList, TabParamList } from '../types';
 import DiscoverScreen from '../screens/DiscoverScreen';
+import SearchScreen from '../screens/SearchScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import MyEventsScreen from '../screens/MyEventsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -29,6 +30,8 @@ function TabNavigator() {
 
           if (route.name === 'Discover') {
             iconName = focused ? 'compass' : 'compass-outline';
+          } else if (route.name === 'Search') {
+            iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Calendar') {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'MyEvents') {
@@ -55,7 +58,12 @@ function TabNavigator() {
       <Tab.Screen
         name="Discover"
         component={DiscoverScreen}
-        options={{ title: 'Discover Events' }}
+        options={{ title: 'Discover' }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{ title: 'Search' }}
       />
       <Tab.Screen
         name="Calendar"

@@ -21,7 +21,8 @@ import { colors } from '../utils/colors';
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, signOut } = useAuth();
-  const { selectedGroupId, allGroups, setAllGroups, setUserGroups } = useGroup();
+  const { selectedGroupId, allGroups, setAllGroups, setUserGroups } =
+    useGroup();
   const [showGroupModal, setShowGroupModal] = useState(false);
 
   useEffect(() => {

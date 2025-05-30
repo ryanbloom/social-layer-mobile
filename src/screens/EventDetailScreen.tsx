@@ -18,19 +18,14 @@ import {
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
 
 import { RootStackParamList } from '../types';
+import { getAuthToken } from '../services/api';
 import {
-  apolloClient,
-  GET_EVENT_DETAIL,
-  attendEvent,
-  cancelAttendance,
-  getAuthToken,
-  starEvent,
-  unstarEvent,
-} from '../services/api';
-import { gql } from '@apollo/client';
+  useEventDetail,
+  useStarEventMutation,
+  useRSVPMutation,
+} from '../services/events';
 import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
@@ -79,10 +74,19 @@ interface ActionButtonProps {
   iconColor?: string;
 }
 
-function ActionButton({ iconName, onPress, loading, disabled, hasCover, iconColor }: ActionButtonProps) {
-  const buttonStyle = hasCover ? styles.actionButton : styles.actionButtonNoCover;
+function ActionButton({
+  iconName,
+  onPress,
+  loading,
+  disabled,
+  hasCover,
+  iconColor,
+}: ActionButtonProps) {
+  const buttonStyle = hasCover
+    ? styles.actionButton
+    : styles.actionButtonNoCover;
   const defaultColor = hasCover ? colors.text.white : colors.text.secondary;
-  
+
   return (
     <TouchableOpacity
       style={buttonStyle}
@@ -90,16 +94,12 @@ function ActionButton({ iconName, onPress, loading, disabled, hasCover, iconColo
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={hasCover ? colors.text.white : colors.primary} 
+        <ActivityIndicator
+          size="small"
+          color={hasCover ? colors.text.white : colors.primary}
         />
       ) : (
-        <Ionicons
-          name={iconName}
-          size={24}
-          color={iconColor || defaultColor}
-        />
+        <Ionicons name={iconName} size={24} color={iconColor || defaultColor} />
       )}
     </TouchableOpacity>
   );
@@ -109,9 +109,10 @@ export default function EventDetailScreen() {
   const route = useRoute<EventDetailRouteProp>();
   const navigation = useNavigation();
   const { eventId } = route.params;
-  const [isRSVPing, setIsRSVPing] = useState(false);
-  const [isStarring, setIsStarring] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
+
+  const starMutation = useStarEventMutation();
+  const rsvpMutation = useRSVPMutation();
   const {
     user,
     isDemoMode,
@@ -123,14 +124,16 @@ export default function EventDetailScreen() {
   const { allGroups } = useGroup();
 
   const renderActionButtons = (hasCover: boolean) => {
-    const containerStyle = hasCover ? styles.actionButtons : styles.actionButtonsNoCover;
-    
+    const containerStyle = hasCover
+      ? styles.actionButtons
+      : styles.actionButtonsNoCover;
+
     return (
       <View style={containerStyle}>
         <ActionButton
           iconName={isStarred ? 'star' : 'star-outline'}
           onPress={handleStarToggle}
-          loading={isStarring}
+          loading={starMutation.isPending}
           hasCover={hasCover}
           iconColor={isStarred ? colors.star : undefined}
         />
@@ -151,9 +154,10 @@ export default function EventDetailScreen() {
   const getEventHosts = () => {
     if (!event) return [];
 
-    const customHost = event.event_roles?.find(r => r.role === 'custom_host');
-    const groupHost = event.event_roles?.find(r => r.role === 'group_host');
-    const cohosts = event.event_roles?.filter(r => r.role === 'co_host') || [];
+    const customHost = event.event_roles?.find((r) => r.role === 'custom_host');
+    const groupHost = event.event_roles?.find((r) => r.role === 'group_host');
+    const cohosts =
+      event.event_roles?.filter((r) => r.role === 'co_host') || [];
 
     const hosts = [];
 
@@ -172,7 +176,7 @@ export default function EventDetailScreen() {
     }
 
     // Add co-hosts
-    cohosts.forEach(cohost => {
+    cohosts.forEach((cohost) => {
       hosts.push({ ...cohost, isPrimary: false, label: 'Co-Host' });
     });
 
@@ -238,88 +242,15 @@ export default function EventDetailScreen() {
     }
   }, [user, eventId, isDemoMode, demoStarredEvents]);
 
+  const parsedEventId = parseInt(eventId.toString(), 10);
+
+  // Use optimized event detail hook that checks cache first
   const {
     data: event,
     isLoading,
     error,
     refetch,
-  } = useQuery({
-    queryKey: ['event', eventId],
-    queryFn: async () => {
-      console.log('=== EventDetailScreen Debug ===');
-      console.log('Raw eventId from route params:', eventId);
-      console.log('eventId type:', typeof eventId);
-      console.log('eventId value:', JSON.stringify(eventId));
-
-      const parsedId = parseInt(eventId.toString(), 10);
-      console.log('Parsed eventId:', parsedId);
-      console.log('Parsed eventId type:', typeof parsedId);
-      console.log('Is parsedId valid number?', !isNaN(parsedId));
-
-      console.log('Making GraphQL query with variables:', { id: parsedId });
-      console.log('GraphQL query string:', GET_EVENT_DETAIL.loc?.source?.body);
-
-      // Try a simple query first to see if the event exists
-      const SIMPLE_EVENT_QUERY = gql`
-        query GetSimpleEvent($id: bigint!) {
-          events_by_pk(id: $id) {
-            id
-            title
-            start_time
-            end_time
-          }
-        }
-      `;
-
-      console.log('Trying simple query first...');
-
-      try {
-        const simpleResult = await apolloClient.query({
-          query: SIMPLE_EVENT_QUERY,
-          variables: { id: parsedId },
-          fetchPolicy: 'network-only',
-          errorPolicy: 'all',
-        });
-
-        console.log('Simple query result:', simpleResult.data);
-
-        if (!simpleResult.data.events_by_pk) {
-          console.log('Event not found with simple query');
-          return null;
-        }
-
-        console.log('Event exists, trying full query...');
-
-        const result = await apolloClient.query({
-          query: GET_EVENT_DETAIL,
-          variables: { id: parsedId },
-          fetchPolicy: 'network-only',
-          errorPolicy: 'all', // Get partial data even if there are errors
-        });
-
-        console.log('Result data:', JSON.stringify(result.data, null, 2));
-        console.log('events_by_pk value:', result.data.events_by_pk);
-
-        if (!result.data.events_by_pk) {
-          console.log('WARNING: events_by_pk is null/undefined');
-        }
-
-        const eventData = result.data.events_by_pk;
-
-        // Check if user has starred this event
-        if (user && eventData) {
-          await checkIfEventIsStarred();
-        }
-
-        return eventData;
-      } catch (error) {
-        console.log('GraphQL query failed with error:', error);
-        console.log('Error message:', error.message);
-        console.log('Error details:', JSON.stringify(error, null, 2));
-        throw error;
-      }
-    },
-  });
+  } = useEventDetail(parsedEventId);
 
   // Check star status when screen comes into focus
   useFocusEffect(
@@ -357,8 +288,6 @@ export default function EventDetailScreen() {
       return;
     }
 
-    setIsRSVPing(true);
-
     try {
       const eventIdInt = parseInt(eventId.toString(), 10);
 
@@ -381,36 +310,36 @@ export default function EventDetailScreen() {
         throw new Error('No authentication token found');
       }
 
-      if (isUserAttending()) {
-        // Cancel attendance
-        await cancelAttendance(eventIdInt, authToken);
+      const currentlyAttending = isUserAttending();
+
+      // Use optimistic mutation for instant UI updates
+      rsvpMutation.mutate({
+        eventId: eventIdInt,
+        isAttending: currentlyAttending,
+        authToken,
+        userId: user.id,
+      });
+
+      // Show success message
+      if (currentlyAttending) {
         Alert.alert('Canceled', 'You have canceled your RSVP for this event.');
       } else {
-        // Attend event
-        await attendEvent(eventIdInt, authToken);
         Alert.alert('Success', "Successfully RSVP'd to event!");
       }
-
-      // Refresh event data to show updated participant list
-      await refetch();
     } catch (error: any) {
       console.error('RSVP error:', error);
       const message =
         error?.message || 'Failed to update RSVP. Please try again.';
       Alert.alert('Error', message);
-    } finally {
-      setIsRSVPing(false);
     }
   };
 
   const getEventUrl = () => {
     if (!event) return '';
-    
-    const eventGroup = allGroups.find(
-      (group) => group.id === event.group?.id
-    );
+
+    const eventGroup = allGroups.find((group) => group.id === event.group?.id);
     const groupHandle = eventGroup?.handle || event.group?.handle || 'event';
-    
+
     return `https://${groupHandle}.sola.day/event/detail/${event.id}`;
   };
 
@@ -434,7 +363,10 @@ export default function EventDetailScreen() {
       await Linking.openURL(url);
     } catch (error) {
       console.error('Open in browser error:', error);
-      Alert.alert('Error', 'Failed to open event in browser. Please try again.');
+      Alert.alert(
+        'Error',
+        'Failed to open event in browser. Please try again.'
+      );
     }
   };
 
@@ -503,8 +435,6 @@ export default function EventDetailScreen() {
 
     if (!event) return;
 
-    setIsStarring(true);
-
     try {
       const eventIdInt = parseInt(eventId.toString(), 10);
 
@@ -520,23 +450,21 @@ export default function EventDetailScreen() {
         throw new Error('No authentication token found');
       }
 
-      if (isStarred) {
-        // Unstar event
-        await unstarEvent(eventIdInt, authToken);
-      } else {
-        // Star event
-        await starEvent(eventIdInt, authToken);
-      }
+      // Use optimistic mutation for instant UI updates
+      starMutation.mutate({
+        eventId: eventIdInt,
+        isStarred,
+        authToken,
+        userId: user.id,
+      });
 
-      // Reload star status from server to ensure consistency
-      await checkIfEventIsStarred();
+      // Update local state immediately
+      setIsStarred(!isStarred);
     } catch (error: any) {
       console.error('Star/unstar error:', error);
       const message =
         error?.message || 'Failed to update star status. Please try again.';
       Alert.alert('Error', message);
-    } finally {
-      setIsStarring(false);
     }
   };
 
@@ -623,7 +551,7 @@ export default function EventDetailScreen() {
 
         {/* Host Info */}
         <View style={styles.hostSection}>
-          {getEventHosts().map((host, index, hosts) => 
+          {getEventHosts().map((host, index, hosts) =>
             renderHost(host, index, index === hosts.length - 1)
           )}
         </View>
@@ -710,9 +638,12 @@ export default function EventDetailScreen() {
           <Button
             title={isUserAttending() ? 'Cancel RSVP' : 'RSVP to Event'}
             onPress={handleRSVP}
-            loading={isRSVPing}
+            loading={rsvpMutation.isPending}
             size="large"
-            style={[styles.rsvpButton, isUserAttending() && styles.cancelButton]}
+            style={[
+              styles.rsvpButton,
+              isUserAttending() && styles.cancelButton,
+            ]}
           />
           <Text style={styles.rsvpNote}>
             {isUserAttending()
