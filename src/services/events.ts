@@ -147,15 +147,21 @@ export const useInfiniteEvents = (
 };
 
 // Hook to get event detail with cache fallback
-export const useEventDetail = (eventId: number) => {
+export const useEventDetail = (eventId: number, forceRefresh: boolean = false) => {
   return useQuery({
     queryKey: [QUERY_KEYS.EVENT_DETAIL, eventId],
     queryFn: async () => {
-      // First, try to get from cache
-      const cachedEvent = await eventDetailCache.get(eventId);
-      if (cachedEvent) {
-        console.log('Using cached event detail for event', eventId);
-        return cachedEvent;
+      // If force refresh is requested, skip cache
+      if (forceRefresh) {
+        console.log('Force refreshing event detail for event', eventId);
+        await eventDetailCache.clear(eventId);
+      } else {
+        // First, try to get from cache
+        const cachedEvent = await eventDetailCache.get(eventId);
+        if (cachedEvent) {
+          console.log('Using cached event detail for event', eventId);
+          return cachedEvent;
+        }
       }
 
       // If not in cache, fetch from API
@@ -168,6 +174,13 @@ export const useEventDetail = (eventId: number) => {
       });
 
       const event = result.data.events_by_pk;
+      console.log('Fetched event from API:', {
+        eventId,
+        hasParticipants: !!event?.participants,
+        participantsLength: event?.participants?.length,
+        hasTickets: !!event?.tickets,
+        ticketsLength: event?.tickets?.length,
+      });
 
       // Cache the result
       if (event) {
@@ -176,10 +189,10 @@ export const useEventDetail = (eventId: number) => {
 
       return event;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: forceRefresh ? 0 : 10 * 60 * 1000, // No stale time if force refresh
     gcTime: 60 * 60 * 1000, // Keep in memory for 1 hour
     // Return cached data while refetching in background
-    placeholderData: (previousData) => previousData,
+    placeholderData: forceRefresh ? undefined : (previousData) => previousData,
   });
 };
 

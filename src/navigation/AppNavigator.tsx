@@ -15,6 +15,7 @@ import CalendarScreen from '../screens/CalendarScreen';
 import MyEventsScreen from '../screens/MyEventsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
+import ParticipantsScreen from '../screens/ParticipantsScreen';
 import CreateEventScreen from '../screens/CreateEventScreen';
 import AuthScreen from '../screens/AuthScreen';
 
@@ -118,6 +119,11 @@ export default function AppNavigator() {
           name="EventDetail"
           component={EventDetailScreen}
           options={{ title: 'Event Details' }}
+        />
+        <Stack.Screen
+          name="Participants"
+          component={ParticipantsScreen}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="CreateEvent"

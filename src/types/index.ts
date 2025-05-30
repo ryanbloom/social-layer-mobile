@@ -255,6 +255,7 @@ export interface Participant {
 export type RootStackParamList = {
   Main: undefined;
   EventDetail: { eventId: number };
+  Participants: { eventId: number };
   Profile: { handle: string };
   CreateEvent: undefined;
   Auth: undefined;

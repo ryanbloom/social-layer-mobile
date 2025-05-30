@@ -359,14 +359,31 @@ export const GET_EVENT_DETAIL = gql`
         nickname
         image_url
       }
-      participants {
+      participants(where: {
+        status: {_neq: "cancelled"}, 
+        _or: [
+          {payment_status: {_is_null: true}}, 
+          {payment_status: {_eq: "succeeded"}}
+        ]
+      }) {
         id
         status
+        payment_status
+        ticket_id
         profile {
           id
           handle
           nickname
           image_url
+          email
+        }
+        ticket {
+          id
+          title
+          payment_methods {
+            id
+            price
+          }
         }
       }
       tickets {
@@ -378,6 +395,12 @@ export const GET_EVENT_DETAIL = gql`
         payment_chain
         payment_token_price
         payment_token_name
+        payment_methods {
+          id
+          price
+          token_name
+          chain
+        }
       }
     }
   }

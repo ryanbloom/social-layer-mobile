@@ -599,7 +599,10 @@ export default function EventDetailScreen() {
 
         {/* Participants */}
         <View style={styles.infoSection}>
-          <View style={styles.infoItem}>
+          <TouchableOpacity
+            style={styles.infoItem}
+            onPress={() => navigation.navigate('Participants', { eventId: parsedEventId })}
+          >
             <Ionicons name="people" size={24} color={colors.primary} />
             <View style={styles.infoText}>
               <Text style={styles.infoTitle}>Participants</Text>
@@ -608,7 +611,8 @@ export default function EventDetailScreen() {
                 {event.max_participant && ` • ${event.max_participant} max`}
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+          </TouchableOpacity>
         </View>
 
         {/* Description */}
